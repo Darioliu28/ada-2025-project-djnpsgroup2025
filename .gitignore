@@ -1,0 +1,6 @@
+# Ignore all files in data/
+data/*
+
+# Keep one CSV file
+!data/subreddit_matches_approved.csv
+
