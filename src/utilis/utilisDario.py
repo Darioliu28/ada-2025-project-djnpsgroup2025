@@ -11,6 +11,145 @@ from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
 
 
+# === Columns FOR POST PROPERTIES ===
+post_props_cols = [
+    "num_chars", "num_chars_no_space", "frac_alpha", "frac_digits",
+    "frac_upper", "frac_spaces", "frac_special", "num_words",
+    "num_unique_words", "num_long_words", "avg_word_length",
+    "num_unique_stopwords", "frac_stopwords", "num_sentences",
+    "num_long_sentences", "avg_chars_per_sentence", "avg_words_per_sentence",
+    "readability_index", "sent_pos", "sent_neg", "sent_compound",
+    "LIWC_Funct", "LIWC_Pronoun", "LIWC_Ppron", "LIWC_I", "LIWC_We",
+    "LIWC_You", "LIWC_SheHe", "LIWC_They", "LIWC_Ipron", "LIWC_Article",
+    "LIWC_Verbs", "LIWC_AuxVb", "LIWC_Past", "LIWC_Present", "LIWC_Future",
+    "LIWC_Adverbs", "LIWC_Prep", "LIWC_Conj", "LIWC_Negate", "LIWC_Quant",
+    "LIWC_Numbers", "LIWC_Swear", "LIWC_Social", "LIWC_Family",
+    "LIWC_Friends", "LIWC_Humans", "LIWC_Affect", "LIWC_Posemo",
+    "LIWC_Negemo", "LIWC_Anx", "LIWC_Anger", "LIWC_Sad", "LIWC_CogMech",
+    "LIWC_Insight", "LIWC_Cause", "LIWC_Discrep", "LIWC_Tentat",
+    "LIWC_Certain", "LIWC_Inhib", "LIWC_Incl", "LIWC_Excl", "LIWC_Percept",
+    "LIWC_See", "LIWC_Hear", "LIWC_Feel", "LIWC_Bio", "LIWC_Body",
+    "LIWC_Health", "LIWC_Sexual", "LIWC_Ingest", "LIWC_Relativ",
+    "LIWC_Motion", "LIWC_Space", "LIWC_Time", "LIWC_Work", "LIWC_Achiev",
+    "LIWC_Leisure", "LIWC_Home", "LIWC_Money", "LIWC_Relig", "LIWC_Death",
+    "LIWC_Assent", "LIWC_Dissent", "LIWC_Nonflu", "LIWC_Filler"
+]
+
+# === COUNTRY INTERACTIONS PROCESSING ===
+def process_country_interactions(df_combined, mapping_csv_path, remove_self_loops=True):
+    """
+    Loads a country mapping file, merges it with interaction data,
+    and aggregates country-to-country interactions.
+
+    Args:
+        df_combined (pd.DataFrame): The main DataFrame of interactions 
+                                    (must have 'SOURCE_SUBREDDIT' and 'TARGET_SUBREDDIT').
+        mapping_csv_path (str): Path to the CSV file containing 
+                                'subreddit' and 'country'/'predicted_country' columns.
+        remove_self_loops (bool): If True, removes interactions where 
+                                  source_country == target_country.
+
+    Returns:
+        tuple: (country_interactions, merged_valid)
+            - country_interactions (pd.DataFrame): Aggregated counts 
+              (source_country, target_country, n_interactions).
+            - merged_valid (pd.DataFrame): The full merged DataFrame with 
+              'source_country' and 'target_country' columns, filtered to non-NaN rows.
+    """
+    
+    # --- 1. Load and clean mapping file ---
+    try:
+        mapping_df = pd.read_csv(mapping_csv_path)
+    except FileNotFoundError:
+        print(f"Error: Mapping file not found at {mapping_csv_path}")
+        return pd.DataFrame(), pd.DataFrame() # Return empty DataFrames on error
+
+    mapping_df.columns = [c.strip().lower() for c in mapping_df.columns]
+    
+    # Standardize country column name
+    if 'country' not in mapping_df.columns and 'predicted_country' in mapping_df.columns:
+        mapping_df.rename(columns={'predicted_country': 'country'}, inplace=True)
+        
+    # Check for required columns
+    if 'subreddit' not in mapping_df.columns or 'country' not in mapping_df.columns:
+        print(f"Error: Mapping file {mapping_csv_path} must have 'subreddit' and 'country' columns.")
+        return pd.DataFrame(), pd.DataFrame()
+
+    # --- 2. Merge country info onto source and target subreddits ---
+    merged = (
+        df_combined
+        .merge(mapping_df[['subreddit', 'country']], how='left',
+               left_on='SOURCE_SUBREDDIT', right_on='subreddit')
+        .rename(columns={'country': 'source_country'})
+        .drop(columns=['subreddit'])
+        .merge(mapping_df[['subreddit', 'country']], how='left',
+               left_on='TARGET_SUBREDDIT', right_on='subreddit')
+        .rename(columns={'country': 'target_country'})
+        .drop(columns=['subreddit'])
+    )
+
+    # --- 3. Keep only interactions where both countries are known ---
+    merged_valid = merged.dropna(subset=['source_country', 'target_country'])
+
+    # --- 4. Aggregate counts of inter-country interactions ---
+    country_interactions = (
+        merged_valid.groupby(['source_country', 'target_country'])
+        .size()
+        .reset_index(name='n_interactions')
+        .sort_values(by='n_interactions', ascending=False)
+    )
+
+    if remove_self_loops:
+        country_interactions = country_interactions.query("source_country != target_country")
+
+    return country_interactions, merged_valid
+
+
+def map_posts_to_countries(df_posts, mapping_csv_path):
+    """
+    Merges a post DataFrame with a country mapping file based on SOURCE_SUBREDDIT.
+
+    Args:
+        df_posts (pd.DataFrame): The main DataFrame of posts (e.g., df_combined). 
+                                 Must have 'SOURCE_SUBREDDIT'.
+        mapping_csv_path (str): Path to the CSV file containing 
+                                'subreddit' and 'country'/'predicted_country'.
+
+    Returns:
+        pd.DataFrame: The original df_posts with a new 'country' column.
+                      Rows without a country match will have NaN 
+                      in the 'country' column.
+    """
+    
+    # --- 1. Load and clean mapping file ---
+    try:
+        mapping_df = pd.read_csv(mapping_csv_path)
+    except FileNotFoundError:
+        print(f"Error: Mapping file not found at {mapping_csv_path}")
+        # Return original df with an empty 'country' col as a precaution
+        return df_posts.assign(country=pd.NA) 
+
+    mapping_df.columns = [c.strip().lower() for c in mapping_df.columns]
+    
+    # Standardize country column name
+    if 'country' not in mapping_df.columns and 'predicted_country' in mapping_df.columns:
+        mapping_df.rename(columns={'predicted_country': 'country'}, inplace=True)
+        
+    if 'subreddit' not in mapping_df.columns or 'country' not in mapping_df.columns:
+        print(f"Error: Mapping file {mapping_csv_path} must have 'subreddit' and 'country'.")
+        return df_posts.assign(country=pd.NA)
+
+    # --- 2. Merge country info onto source subreddit ---
+    # We use a left merge to keep all original posts
+    df_with_countries = df_posts.merge(
+        mapping_df[['subreddit', 'country']],
+        how='left',
+        left_on='SOURCE_SUBREDDIT',
+        right_on='subreddit'
+    ).drop(columns=['subreddit']) # Drop the redundant 'subreddit' col
+    
+    return df_with_countries
+
 # === 1. CLUSTERS WITH EMBEDDING ANALYSIS ===
 
 def prepare_embeddings_for_clustering(df_emb):
