@@ -1481,3 +1481,172 @@ def analyze_pure_cross_interactions(df_posts, df_countries, df_politics, link_se
     
     print("\n--- Analysis Complete ---")
     return df_ideology_summary
+
+
+from __future__ import annotations
+import re
+from pathlib import Path
+from typing import Iterable, List, Dict, Set
+
+
+ECON_KEYWORDS: Set[str] = {
+    # Economics / macro
+    "economy","economic","economics","macro","micro","econometrics",
+    "growth","recession","inflation","deflation","stagflation","productivity",
+    "gdp","policy","monetary","fiscal","budget","tax","taxation","debt",
+    "deficit","surplus","inequality","poverty","development","sustainability",
+    # Finance & markets
+    "finance","financial","bank","banking","credit","loan","interest",
+    "investment","investing","investor","dividend","equity","capital",
+    "bond","bonds","securities","market","markets","stock","stocks",
+    "index","indices","fund","funds","etf","hedge","portfolio","trading",
+    "broker","exchange","nyse","nasdaq","wallstreet","dowjones","dow","sp500",
+    "forex","currency","currencies","money","wealth","cryptocurrency",
+    "crypto","bitcoin","ethereum","blockchain","token","nft",
+    # Commodities / energy / business / trade
+    "commodity","commodities","oil","petrol","gas","naturalgas","energy",
+    "coal","uranium","electricity","power","renewable","solar","wind",
+    "hydrogen","gold","silver","platinum","palladium","copper","iron",
+    "steel","aluminium","nickel","zinc","lead","lithium","cobalt","rareearth",
+    "grain","wheat","corn","soybean","rice","coffee","sugar","cotton",
+    "timber","water","mining","agriculture","agricultural",
+    "industry","industries","manufacturing","commerce","business",
+    "entrepreneur","entrepreneurship","startup","venture","innovation",
+    "supply","demand","trade","export","import","globalization","logistics",
+    "transport","shipping",
+    # Institutions / policy
+    "centralbank","ecb","fed","imf","worldbank","oecd","wto","regulation",
+    "governance","public","reform","subsidy","aid","stimulus","bailout",
+    "spending","taxpayer","treasury"
+}
+
+MACRO_TOPICS: Dict[str, List[str]] = {
+    "Economics": [
+        "economy","economic","economics","macro","micro","econometrics",
+        "growth","recession","inflation","deflation","stagflation","productivity",
+        "gdp","policy","monetary","fiscal","budget","tax","taxation","debt",
+        "deficit","surplus","inequality","poverty","development","sustainability"
+    ],
+    "Finance and Markets": [
+        "finance","financial","bank","banking","credit","loan","interest",
+        "investment","investing","investor","dividend","equity","capital",
+        "bond","bonds","securities","market","markets","stock","stocks",
+        "index","indices","fund","funds","etf","hedge","portfolio","trading",
+        "broker","exchange","nyse","nasdaq","wallstreet","dowjones","dow","sp500",
+        "forex","currency","currencies","money","wealth","cryptocurrency",
+        "crypto","bitcoin","ethereum","blockchain","token","nft"
+    ],
+    "Commodities": [
+        "commodity","commodities","gold","silver","platinum","palladium",
+        "copper","iron","steel","aluminium","nickel","zinc","lead","lithium",
+        "cobalt","rareearth","grain","wheat","corn","soybean","rice","coffee",
+        "sugar","cotton","timber","water","mining","agriculture","agricultural"
+    ],
+    "Energy": [
+        "oil","petrol","gas","naturalgas","energy","coal","uranium","electricity",
+        "power","renewable","solar","wind","hydrogen"
+    ],
+    "Businesses": [
+        "industry","industries","manufacturing","commerce","business",
+        "entrepreneur","entrepreneurship","startup","venture","innovation",
+        "supply","demand","trade","export","import","globalization","logistics",
+        "transport","shipping"
+    ],
+    "Institutions / Policies": [
+        "centralbank","ecb","fed","imf","worldbank","oecd","wto","regulation",
+        "governance","public","reform","subsidy","aid","stimulus","bailout",
+        "spending","taxpayer","treasury"
+    ]
+}
+
+def normalize(s: str) -> str:
+    """Lowercase + sostituisce non-alfanumerici con spazio."""
+    if not isinstance(s, str):
+        return ""
+    return "".join(ch.lower() if ch.isalnum() else " " for ch in s).strip()
+
+def normalize_series(ser: pd.Series) -> pd.Series:
+    return ser.astype(str).str.lower().str.strip()
+
+
+_WORD_PATS = [re.compile(rf"\b{re.escape(kw)}\b") for kw in sorted(ECON_KEYWORDS)]
+
+def contains_econ_word(text: str) -> bool:
+    """True se la stringa contiene almeno una keyword economica."""
+    if not isinstance(text, str) or not text:
+        return False
+    s = normalize(text)
+    for pat in _WORD_PATS:
+        if pat.search(s):
+            return True
+    return any(kw in s for kw in ECON_KEYWORDS)
+
+
+def classify_topic(name: str) -> str:
+    """Ritorna il macro-topic (o 'Other / unclassified')."""
+    s = normalize(name)
+    for topic, kws in MACRO_TOPICS.items():
+        for kw in kws:
+            if re.search(rf"\b{re.escape(kw)}\b", s) or kw in s:
+                return topic
+    return "Other / unclassified"
+
+
+def read_any(path: str | Path) -> pd.DataFrame:
+    p = Path(path)
+    if p.suffix.lower() in (".xlsx", ".xls"):
+        return pd.read_excel(p)
+    return pd.read_csv(p)
+
+def save_csv(df: pd.DataFrame, path: str | Path) -> None:
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(path, index=False)
+
+def build_economic_links_with_geo_labeled(
+    edges: pd.DataFrame,
+    geo_df: pd.DataFrame,
+    filter_economic: bool = True,
+    drop_duplicates: bool = True
+) -> pd.DataFrame:
+    """
+    - Normalizza nomi subreddit
+    - (opz) filtra edges 'economici' (almeno una estremità matcha keyword)
+    - Seleziona edges con almeno un estremo in geo_df['subreddit']
+    - Aggiunge SOURCE_CATEGORY / TARGET_CATEGORY
+    - Ritorna DF finale
+    """
+    req = {"SOURCE_SUBREDDIT","TARGET_SUBREDDIT"}
+    missing = req - set(edges.columns)
+    if missing:
+        raise KeyError(f"Mancano colonne {missing}. Trovate: {edges.columns.tolist()}")
+
+    if "subreddit" not in geo_df.columns:
+        raise KeyError("Attesa colonna 'subreddit' in geo_df")
+
+    edges = edges.copy()
+    edges["SOURCE_SUBREDDIT"] = normalize_series(edges["SOURCE_SUBREDDIT"])
+    edges["TARGET_SUBREDDIT"] = normalize_series(edges["TARGET_SUBREDDIT"])
+
+    geo_set = set(normalize_series(geo_df["subreddit"]))
+
+    if filter_economic:
+        mask_econ = (
+            edges["SOURCE_SUBREDDIT"].apply(contains_econ_word) |
+            edges["TARGET_SUBREDDIT"].apply(contains_econ_word)
+        )
+        edges = edges[mask_econ]
+
+    mask_geo = (
+        edges["SOURCE_SUBREDDIT"].isin(geo_set) |
+        edges["TARGET_SUBREDDIT"].isin(geo_set)
+    )
+    edges = edges[mask_geo]
+
+    if drop_duplicates:
+        edges = edges.drop_duplicates(subset=["SOURCE_SUBREDDIT","TARGET_SUBREDDIT"])
+
+    edges["SOURCE_CATEGORY"] = edges["SOURCE_SUBREDDIT"].apply(classify_topic)
+    edges["TARGET_CATEGORY"] = edges["TARGET_SUBREDDIT"].apply(classify_topic)
+    return edges
+
+

@@ -112,6 +112,6 @@ Our primary dataset is the `soc-redditHyperlinks-title.tsv` and `soc-redditHyper
     * **Tasks:** Responsible for building the core `networkx` graph from the hyperlink data (`network_analysis.ipynb`). Calculates graph-theoretic properties (centrality, degree, paths).
     * **Milestone:** Delivers the final, saved graph object and a notebook with basic network statistics.
 
-* **Pietro:**
-    * **Tasks:** 
-    * **Milestone:** 
+* **Pietro: Economics Analysis Lead**
+    * **Tasks:**  Economics subreddits filtering in `utils.py`. Analysis between economics and subreddits, plotting results and finding basic statistics about `economic_links_with_geo_labeled2.csv`. 
+    * **Milestone:**  Delivers the final `economic_links_with_geo_labeled2.csv` and analysis in `result.ipynb`.
