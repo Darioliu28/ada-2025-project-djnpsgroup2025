@@ -39,12 +39,12 @@ Our primary dataset is the `soc-redditHyperlinks-title.tsv` and `soc-redditHyper
         * Using the fuzzy-matching functions in `data.py`, we searched for subreddits whose names match these keywords with a high confidence score (e.g., score > 95).
     * **Management:** This produces a `politic_subreddit.csv` file, classifying subreddits by their likely ideology, which will be merged with the main dataset.
 
-3.  **Sport-Subreddit Mapping: NOEMI MODIFY THIS PART USING THE SAME LOGIC, EXPLAIN IN WHICH CODE YOU DID WHAT**
-    * **Source:** 
+3.  **Sport-Subreddit Mapping:**
+    * **Source:** We generated this from df_countries_expanded, since we were looking for subreddits linked to a sport that interacted with a subreddit linked to a country, as detailed in `filter_sports.py`.
     * **Process:**
-        * A
-        * B
-    * **Management:** 
+        * We defined a comprehensive dictionary of keywords associated with different sports
+        * Using the fuzzy-matching functions, we searched for subreddits whose names match these keywords with a high confidence score
+    * **Management:** This produces a `df_countries_sport.csv` file, a dataset with all the posts where one interacting subreddit is linked to a country and the other is linked to a sport.
 
 4.  **Subreddit Embeddings:**
     * **Source:** We used the pre-computed subreddit embeddings provided as a side of the main dataset (`load_embeddings`).
@@ -60,13 +60,18 @@ Our primary dataset is the `soc-redditHyperlinks-title.tsv` and `soc-redditHyper
     * Apply K-Means clustering (using the elbow-plot method from `plotting.py` to find optimal *k*) on the subreddit embeddings to identify "natural" community clusters.
     * Visualize these clusters using t-SNE.
     * Generate a final network visualization (using `matplotlib`/`networkx` from `plotting.py`) showing the signed, aggregated network of country and political interactions.
+    
+3.  **Interaction effect**
+    * Calculate the 7-day conditional reciprocity probability for inter-country interactions (B-->A | A-->B), defining the initiator (A) based on the first-ever post.
+    * Apply the same 7-day reciprocity logic to interactions between different subreddits within the same country.
+    *  Test for stylistic mirroring by statistically comparing the LIWC/VADER cosine similarity of reciprocal pairs against a random baseline.
 
-3.  **Community & Interaction Analysis:**
+4.  **Community & Interaction Analysis:**
     * Merge topic related subreddits to countries to find patterns.
     * Use TIMESTAMP to enrich with timewise analysis
     * Use the `utilis.py` functions to create a summary DataFrame of interactions.
 
-4.  **Network Construction (NetworkX):**
+5.  **Network Construction (NetworkX):**
     * As developed in `network_analysis.ipynb`, construct a directed graph using `networkx` where nodes are subreddits and directed edges represent hyperlinks.
     * The post properties (sentiment, LIWC features) from the dataset will be attached as attributes to each edge.
     * Create a "signed network" by computing the net sentiment of interactions between any two nodes, as planned in `plotting.py`.
@@ -100,8 +105,8 @@ Our primary dataset is the `soc-redditHyperlinks-title.tsv` and `soc-redditHyper
     * **Milestone:** Delivers the final `politic_subreddit.csv` and analysis in `result.ipynb`.
 
 * **Noemi: Chain of Interactions and Sport analysis Lead**
-    * **Tasks:** Manages the sentiment and LIWC feature aggregation. Sport subreddits filtering in `filter_sports.ipynb`
-    * **Milestone:** 
+    * **Tasks:** Sport subreddits filtering in `filter_sports.ipynb`. Delivered final, deterministic probabilities for global and intra-country reciprocity. Completed statistical analysis proving/disproving linguistic style mirroring. Generated the final top_sport_per_country.csv analysis.
+    * **Milestone:** Delivers the final `df_countries_sport.csv` and analysis in `result.ipynb`.
 
 * **Simon: Network Analysis Lead**
     * **Tasks:** Responsible for building the core `networkx` graph from the hyperlink data (`network_analysis.ipynb`). Calculates graph-theoretic properties (centrality, degree, paths).
