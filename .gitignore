@@ -7,3 +7,4 @@ src/__pycache__/
 src/.ipyng_checkpoints/
 .ipyng_checkpoints/
 
+.DS_Store
