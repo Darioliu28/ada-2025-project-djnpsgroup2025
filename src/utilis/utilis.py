@@ -859,7 +859,6 @@ def response_global(df_country):
     valid_pairs = pair_counts[pair_counts > 1].index
     df_analysis = df_clean[df_clean['pair_key'].isin(valid_pairs)]
 
-    # This print statement was missing in the translation request, adding it in English
     print(f"DataFrame ready. Analyzing {len(valid_pairs)} pairs.")
 
     ## --- 2. Global Totals Calculation (Deterministic Logic) ---
@@ -871,7 +870,6 @@ def response_global(df_country):
     # Iterate over each unique pair with a progress bar
     for pair in tqdm(valid_pairs, desc="Analyzing pairs"):
         
-        # Skip A->A self-interactions (which have len < 2)
         if len(pair) < 2:
             continue
             
@@ -1045,10 +1043,8 @@ def response_intra_country(df_combined):
     if total_initiators_global > 0:
         cond_prob = total_responses_global / total_initiators_global
     else:
-        # Print in English
         print("No initiator-response interactions found.")
 
-    # Print in English
     print("\n--- Global INTRA-COUNTRY Reciprocity Analysis ---")
     print(f"Total 'initiator' interactions (SubA -> SubB) analyzed: {total_initiators_global}")
     print(f"Total responses (SubB -> SubA) within 7 days: {total_responses_global:.0f}")
@@ -1107,7 +1103,6 @@ def find_reciprocity_pairs_and_similarity(df_interactions, features_list, matche
                 first_response_id = first_response_row['POST_ID'] 
                     
                 try:
-                    # Use only the 'features_list' (style vector)
                     vector_trigger = df_interactions.loc[[trigger_id], features_list].values
                     vector_response = df_interactions.loc[[first_response_id], features_list].values
                         
@@ -1122,7 +1117,7 @@ def response_similarity(df_combined, matches_csv):
     # --- 1. Style Feature Definition ---
     df_combined['TIMESTAMP'] = pd.to_datetime(df_combined['TIMESTAMP'])
     style_features_list = [
-        # Tone/Sentiment Measures (your VADER)
+        # Tone/Sentiment Measures 
         'sent_pos',
         'sent_neg',
         'sent_compound',
@@ -1138,18 +1133,15 @@ def response_similarity(df_combined, matches_csv):
 
 
     # --- 2. Data Preparation ---
-    # Ensure 'df_combined', 'post_props_cols', 'country_subs_list' exist.
 
     # Verify that the chosen style features exist
     for col in style_features_list:
         if col not in df_combined.columns:
-            # This check should not fail now
             raise ValueError(f"Style feature '{col}' was not found in df_combined.")
 
-    # Columns for analysis: only style features + necessary ones
     other_needed_cols = ['POST_ID', 'SOURCE_SUBREDDIT', 'TARGET_SUBREDDIT',
                         'TIMESTAMP', 'LINK_SENTIMENT']
-    # We use 'style_features_list' to filter
+
     df_analysis = df_combined[other_needed_cols + style_features_list].copy()
     df_analysis = df_analysis.set_index('POST_ID')
 
@@ -1160,7 +1152,7 @@ def response_similarity(df_combined, matches_csv):
     # --- 3. Main Analysis Execution (Reciprocity) ---
     reciprocity_similarities = find_reciprocity_pairs_and_similarity(
         df_analysis, 
-        style_features_list,  # <-- We pass the style list
+        style_features_list,  
         matches_csv
     )
 
@@ -1204,14 +1196,14 @@ def response_similarity(df_combined, matches_csv):
         
         # Statistical test (t-test)
         try:
-            # T-test (if data is ~normal)
+            # T-test 
             t_stat, p_value = ttest_ind(sim_series_reciprocal, sim_series_baseline, 
                                         equal_var=False, alternative='greater')
             print(f"\n--- T-Test (Reciprocal > Random) ---")
             print(f"T-statistic: {t_stat:.4f}")
             print(f"P-value: {p_value:.4f}")
 
-            # Mann-Whitney U (more robust if data is not normal)
+            # Mann-Whitney U 
             mwu_stat, mwu_p_value = mannwhitneyu(sim_series_reciprocal, sim_series_baseline, 
                                                 alternative='greater')
             print(f"\n--- Mann-Whitney U Test (Reciprocal > Random) ---")
@@ -1237,14 +1229,20 @@ def response_similarity(df_combined, matches_csv):
         sns.kdeplot(sim_series_reciprocal, fill=True, label='Reciprocal Similarity (Test)', clip=(-1, 1))
         sns.kdeplot(sim_series_baseline, fill=True, label='Random Similarity (Control)', clip=(-1, 1))
         
-        # Calculate and plot the medians
+        # Calculate and plot the means
         mean_reciprocal = sim_series_reciprocal.mean()
         mean_baseline = sim_series_baseline.mean()
+        median_reciprocal = sim_series_reciprocal.median()
+        median_baseline = sim_series_baseline.median()
         
         plt.axvline(mean_reciprocal, color=sns.color_palette()[0], linestyle='--', 
                     label=f'Reciprocal Mean: {mean_reciprocal:.2f}')
         plt.axvline(mean_baseline, color=sns.color_palette()[1], linestyle=':', 
-                    label=f'Random Median: {mean_baseline:.2f}')
+                    label=f'Random Mean: {mean_baseline:.2f}')
+        plt.axvline(median_reciprocal, color=sns.color_palette()[0], linestyle='--', 
+                    label=f'Reciprocal Median: {median_reciprocal:.2f}')
+        plt.axvline(median_baseline, color=sns.color_palette()[1], linestyle=':', 
+                    label=f'Random Median: {median_baseline:.2f}')
         
         plt.title('Style Similarity Distribution: Reciprocal Pairs vs. Random Pairs')
         plt.xlabel('Cosine Similarity (Based on Style Vector)')
