@@ -241,7 +241,7 @@ def plot_signed_network(mapped_posts_df, factions_df_norm, title="Signed Network
         ax_net.set_title("Signed Network of Country Interactions (Green=Positive, Red=Negative Net Sentiment)", fontsize=16)
         ax_net.set_axis_off()
         plt.tight_layout()
-        plt.savefig("signed_network_plot.png", dpi=300) # Higher resolution save
+        # plt.savefig("signed_network_plot.png", dpi=300) # Higher resolution save
         print("Signed Network Plot saved as signed_network_plot.png")
         plt.show() # Display the plot directly
         plt.close(fig_net)

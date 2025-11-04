@@ -1,4 +1,4 @@
-
+from __future__ import annotations
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -13,6 +13,9 @@ from tqdm import tqdm
 from scipy.stats import ttest_ind, mannwhitneyu
 import matplotlib.pyplot as plt
 import seaborn as sns
+import re
+from pathlib import Path
+from typing import Iterable, List, Dict, Set
 
 # === Columns FOR POST PROPERTIES ===
 post_props_cols = [
@@ -1481,12 +1484,6 @@ def analyze_pure_cross_interactions(df_posts, df_countries, df_politics, link_se
     
     print("\n--- Analysis Complete ---")
     return df_ideology_summary
-
-
-from __future__ import annotations
-import re
-from pathlib import Path
-from typing import Iterable, List, Dict, Set
 
 
 ECON_KEYWORDS: Set[str] = {

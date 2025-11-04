@@ -1,6 +1,7 @@
 # Ignore all files in data/
-data/*
+venv/*
+data/soc-redditHyperlinks-body.tsv
+data/soc-redditHyperlinks-title.tsv
+data/web-redditEmbeddings-subreddits.csv
+src/__pycache__
 
-# Keep one CSV file
-!data/subreddit_matches_approved.csv
-!data/country_shortest_paths_output.csv

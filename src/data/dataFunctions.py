@@ -201,3 +201,62 @@ def find_political_subreddits(df_posts, ideologies_dict, score_threshold=95, lim
     print(f"\nFound {len(df_politics)} relevant political ideology subreddits.")
     
     return df_politics
+
+def load_country_exp(matches, df_combined):
+    time_format = '%Y-%m-%d %H:%M:%S'
+    df_combined['TIMESTAMP'] = pd.to_datetime(df_combined['TIMESTAMP'], format=time_format)
+    post_props_cols = [
+    "num_chars", "num_chars_no_space", "frac_alpha", "frac_digits",
+    "frac_upper", "frac_spaces", "frac_special", "num_words",
+    "num_unique_words", "num_long_words", "avg_word_length",
+    "num_unique_stopwords", "frac_stopwords", "num_sentences",
+    "num_long_sentences", "avg_chars_per_sentence", "avg_words_per_sentence",
+    "readability_index", "sent_pos", "sent_neg", "sent_compound",
+    "LIWC_Funct", "LIWC_Pronoun", "LIWC_Ppron", "LIWC_I", "LIWC_We",
+    "LIWC_You", "LIWC_SheHe", "LIWC_They", "LIWC_Ipron", "LIWC_Article",
+    "LIWC_Verbs", "LIWC_AuxVb", "LIWC_Past", "LIWC_Present", "LIWC_Future",
+    "LIWC_Adverbs", "LIWC_Prep", "LIWC_Conj", "LIWC_Negate", "LIWC_Quant",
+    "LIWC_Numbers", "LIWC_Swear", "LIWC_Social", "LIWC_Family",
+    "LIWC_Friends", "LIWC_Humans", "LIWC_Affect", "LIWC_Posemo",
+    "LIWC_Negemo", "LIWC_Anx", "LIWC_Anger", "LIWC_Sad", "LIWC_CogMech",
+    "LIWC_Insight", "LIWC_Cause", "LIWC_Discrep", "LIWC_Tentat",
+    "LIWC_Certain", "LIWC_Inhib", "LIWC_Incl", "LIWC_Excl", "LIWC_Percept",
+    "LIWC_See", "LIWC_Hear", "LIWC_Feel", "LIWC_Bio", "LIWC_Body",
+    "LIWC_Health", "LIWC_Sexual", "LIWC_Ingest", "LIWC_Relativ",
+    "LIWC_Motion", "LIWC_Space", "LIWC_Time", "LIWC_Work", "LIWC_Achiev",
+    "LIWC_Leisure", "LIWC_Home", "LIWC_Money", "LIWC_Relig", "LIWC_Death",
+    "LIWC_Assent", "LIWC_Dissent", "LIWC_Nonflu", "LIWC_Filler"
+    ]
+
+    # Split POST_PROPERTIES into columns
+    df_combined[post_props_cols] = df_combined["PROPERTIES"].str.split(",", expand=True).astype(float)
+    df_combined = df_combined.drop(columns=["PROPERTIES"])
+    df_combined["SOURCE_COUNTRY"] = df_combined["SOURCE_SUBREDDIT"].map(matches)
+    df_combined["TARGET_COUNTRY"] = df_combined["TARGET_SUBREDDIT"].map(matches)
+
+    df_country = df_combined.dropna(subset=['SOURCE_COUNTRY', 'TARGET_COUNTRY'], how='all')
+
+    new_order = ["SOURCE_SUBREDDIT","SOURCE_COUNTRY", "TARGET_SUBREDDIT", "TARGET_COUNTRY", "POST_ID", "TIMESTAMP", "LINK_SENTIMENT", 
+        "num_chars", "num_chars_no_space", "frac_alpha", "frac_digits",
+        "frac_upper", "frac_spaces", "frac_special", "num_words",
+        "num_unique_words", "num_long_words", "avg_word_length",
+        "num_unique_stopwords", "frac_stopwords", "num_sentences",
+        "num_long_sentences", "avg_chars_per_sentence", "avg_words_per_sentence",
+        "readability_index", "sent_pos", "sent_neg", "sent_compound",
+        "LIWC_Funct", "LIWC_Pronoun", "LIWC_Ppron", "LIWC_I", "LIWC_We",
+        "LIWC_You", "LIWC_SheHe", "LIWC_They", "LIWC_Ipron", "LIWC_Article",
+        "LIWC_Verbs", "LIWC_AuxVb", "LIWC_Past", "LIWC_Present", "LIWC_Future",
+        "LIWC_Adverbs", "LIWC_Prep", "LIWC_Conj", "LIWC_Negate", "LIWC_Quant",
+        "LIWC_Numbers", "LIWC_Swear", "LIWC_Social", "LIWC_Family",
+        "LIWC_Friends", "LIWC_Humans", "LIWC_Affect", "LIWC_Posemo",
+        "LIWC_Negemo", "LIWC_Anx", "LIWC_Anger", "LIWC_Sad", "LIWC_CogMech",
+        "LIWC_Insight", "LIWC_Cause", "LIWC_Discrep", "LIWC_Tentat",
+        "LIWC_Certain", "LIWC_Inhib", "LIWC_Incl", "LIWC_Excl", "LIWC_Percept",
+        "LIWC_See", "LIWC_Hear", "LIWC_Feel", "LIWC_Bio", "LIWC_Body",
+        "LIWC_Health", "LIWC_Sexual", "LIWC_Ingest", "LIWC_Relativ",
+        "LIWC_Motion", "LIWC_Space", "LIWC_Time", "LIWC_Work", "LIWC_Achiev",
+        "LIWC_Leisure", "LIWC_Home", "LIWC_Money", "LIWC_Relig", "LIWC_Death",
+        "LIWC_Assent", "LIWC_Dissent", "LIWC_Nonflu", "LIWC_Filler"]
+
+    df_country = df_country[new_order]
+    return df_country
