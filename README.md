@@ -1,15 +1,5 @@
 # Mapping Societal Dynamics on Reddit
 
-## Data Setup
-
-To run the analysis, you must first place the original datasets in the `/data/` directory.
-
-The following files are required:
-
-* `soc-redditHyperlinks-body.tsv`
-* `soc-redditHyperlinks-title.tsv`
-* `web-redditEmbeddings-subreddits.csv`
-
 ## Abstract
 
 Society groups people by geography, interests, and culture. This project explores whether Reddit reflects these aggregation dynamics, questioning if it's a valid proxy for real-world interactions or just a skewed representation. The core idea is to map subreddits to entities like countries (e.g., r/italy) or topics (e.g., r/politic) to analyze their interaction patterns. The goal is twofold: first, determine if digital group components (like language or interests) highlight real-world relationships. Second, study "country-based" groups by analyzing their engagement with thematic subreddits. We aim to uncover if digital interactions can reveal cultural traits and intrinsic dynamics present in their real-world counterparts.
@@ -29,13 +19,26 @@ Our analysis follows hierarchical questions, from data processing to high-level 
 * Do linguistic features (LIWC) and sentiment differ in posts linking *within* (country-to-country) versus *between* communities (country-to-politics)?
 * Can 2014-2016 geopolitical relationships be seen in national subreddit interaction patterns?
 
+## Data Setup
+
+To run the analysis, you must first place the original datasets in the `/data/` directory.
+
+The following files are required:
+
+* `soc-redditHyperlinks-body.tsv`
+* `soc-redditHyperlinks-title.tsv`
+* `web-redditEmbeddings-subreddits.csv`
+
+The `src/data` contains all the files and notebook that have been used to pre-procces the data or map subreddits. Their output has been saved (as csv files) in the `data` folder for a faster analysis. 
+The correct way to reproduce all the findings is to simply run `results.ipynb` using the already approved and saved files
+
 ## Proposed Additional Datasets (Data Enrichment)
 
 Our primary dataset is the `soc-redditHyperlinks` corpus. We are not adding external datasets, but generating new metadata by classifying subreddits:
 
 1.  **Country-Subreddit Mapping:**
     * **Source:** Generated from unique subreddits.
-    * **Process:** (Notebooks: `make_initial_subreddit_maps.ipynb`, `filter_maches.ipynb`). We built a map of country names, demonyms, and codes. We applied matching rules (direct, token, fuzzy string matching with `rapidfuzz`) to map names (e.g., 'r/norge' to 'Norway'). An initial 1700-subreddit mapping was manually checked and filtered.
+    * **Process:** (Notebooks: `make_initial_subreddit_maps.ipynb`, `filter_maches.ipynb`). We built a map of country names, demonyms, and codes. We applied matching rules (direct, token, fuzzy string matching with `rapidfuzz`) to map names (e.g., 'r/norge' to 'Norway'). An initial 1700-subreddit mapping was manually checked and filtered. A much bigger country related dataset has been also produced for some analysis; please check in the section **Mapping Subreddits to Country** in `results.ipynb` for a better description.
     * **Management:** Final mapping saved as `subreddit_matches_approved.csv` for lookup.
 
 2.  **Political-Ideology-Subreddit Mapping:**
