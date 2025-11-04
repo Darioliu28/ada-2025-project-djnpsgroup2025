@@ -3,6 +3,6 @@ venv/*
 data/soc-redditHyperlinks-body.tsv
 data/soc-redditHyperlinks-title.tsv
 data/web-redditEmbeddings-subreddits.csv
-src/__pycache__*
-src/.ipyng_checkpoints*
+src/__pycache__/*
+src/.ipyng_checkpoints/*
 
