@@ -1,5 +1,15 @@
 # Mapping Societal Dynamics on Reddit
 
+## Data Setup
+
+To run the analysis, you must first place the original datasets in the `/data/` directory.
+
+The following files are required:
+
+* `soc-redditHyperlinks-body.tsv`
+* `soc-redditHyperlinks-title.tsv`
+* `web-redditEmbeddings-subreddits.csv`
+
 ## Abstract
 
 Society groups people by geography, interests, and culture. This project explores whether Reddit reflects these aggregation dynamics, questioning if it's a valid proxy for real-world interactions or just a skewed representation. The core idea is to map subreddits to entities like countries (e.g., r/italy) or topics (e.g., r/politic) to analyze their interaction patterns. The goal is twofold: first, determine if digital group components (like language or interests) highlight real-world relationships. Second, study "country-based" groups by analyzing their engagement with thematic subreddits. We aim to uncover if digital interactions can reveal cultural traits and intrinsic dynamics present in their real-world counterparts.
@@ -96,6 +106,7 @@ Our primary dataset is the `soc-redditHyperlinks` corpus. We are not adding exte
 * **Noemi: Chain of Interactions and Sport analysis Lead**
     * **Tasks:** Delivered reciprocity probabilities (global, intra-country). Completed statistical analysis of linguistic style mirroring. Sport subreddits filtering (`filter_sports.ipynb`). 
     Expanded the dataset for country-subreddit mapping (`filter_countries_expanded.py`).
+    Organized the repository.
     * **Milestone:** Delivers `df_countries_sport.csv` and analysis in `result.ipynb`.
 
 * **Simon: Network Analysis Lead**
