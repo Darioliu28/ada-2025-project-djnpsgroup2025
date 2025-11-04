@@ -1238,13 +1238,13 @@ def response_similarity(df_combined, matches_csv):
         sns.kdeplot(sim_series_baseline, fill=True, label='Random Similarity (Control)', clip=(-1, 1))
         
         # Calculate and plot the medians
-        median_reciprocal = sim_series_reciprocal.median()
-        median_baseline = sim_series_baseline.median()
+        mean_reciprocal = sim_series_reciprocal.mean()
+        mean_baseline = sim_series_baseline.mean()
         
-        plt.axvline(median_reciprocal, color=sns.color_palette()[0], linestyle='--', 
-                    label=f'Reciprocal Median: {median_reciprocal:.2f}')
-        plt.axvline(median_baseline, color=sns.color_palette()[1], linestyle=':', 
-                    label=f'Random Median: {median_baseline:.2f}')
+        plt.axvline(mean_reciprocal, color=sns.color_palette()[0], linestyle='--', 
+                    label=f'Reciprocal Mean: {mean_reciprocal:.2f}')
+        plt.axvline(mean_baseline, color=sns.color_palette()[1], linestyle=':', 
+                    label=f'Random Median: {mean_baseline:.2f}')
         
         plt.title('Style Similarity Distribution: Reciprocal Pairs vs. Random Pairs')
         plt.xlabel('Cosine Similarity (Based on Style Vector)')
