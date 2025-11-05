@@ -22,7 +22,7 @@ Our analysis follows hierarchical questions, from data processing to high-level 
 
 ## Data Setup
 
-To run the analysis, you must first place the original datasets in the `/data/` directory.
+To run the analysis, you must first place the original datasets in the `/data/` folder.
 
 The following files are required:
 
@@ -30,16 +30,16 @@ The following files are required:
 * `soc-redditHyperlinks-title.tsv`
 * `web-redditEmbeddings-subreddits.csv`
 
-The `src/data` contains all the files and notebook that have been used to pre-procces the data or map subreddits. Their output has been saved (as csv files) in the `data` folder for a faster analysis. 
+The `src/data` contains all the files and notebook that have been used to pre-process the data or map subreddits. Their output has been saved (as csv files) in the `data` folder for a faster analysis. 
 The correct way to reproduce all the findings is to simply run `results.ipynb` using the already approved and saved files
 
-## Proposed Additional Datasets (Data Enrichment)
+## Data Enrichment and Metadata Generation
 
-Our primary dataset is the `soc-redditHyperlinks` corpus. We are not adding external datasets, but generating new metadata by classifying subreddits:
+From these datasets, we generated new metadata by classifying subreddits into categories such as countries, political ideologies, and sports.
 
 1.  **Country-Subreddit Mapping:**
     * **Source:** Generated from unique subreddits.
-    * **Process:** (Notebooks: `make_initial_subreddit_maps.ipynb`, `filter_maches.ipynb`). We built a map of country names, demonyms, and codes. We applied matching rules (direct, token, fuzzy string matching with `rapidfuzz`) to map names (e.g., 'r/norge' to 'Norway'). An initial 1700-subreddit mapping was manually checked and filtered. A much bigger country related dataset has been also produced for some analysis; please check in the section **Mapping Subreddits to Country** in `results.ipynb` for a better description.
+    * **Process:** (Notebooks: `make_initial_subreddit_maps.ipynb`, `filter_matches.ipynb`). We built a map of country names, demonyms, and codes. We applied matching rules (direct, token, fuzzy string matching with `rapidfuzz`) to map names (e.g., 'r/norge' to 'Norway'). An initial 1700-subreddit mapping was manually checked and filtered. A much bigger country related dataset has been also produced for some analysis; please check in the section **Mapping Subreddits to Country** in `results.ipynb` for a better description.
     * **Management:** Final mapping saved as `subreddit_matches_approved.csv` for lookup.
 
 2.  **Political-Ideology-Subreddit Mapping:**
@@ -75,13 +75,16 @@ Our primary dataset is the `soc-redditHyperlinks` corpus. We are not adding exte
 4.  **Community & Interaction Analysis:**
     * Merge topic subreddits with countries to find patterns.
     * Use TIMESTAMP for timewise analysis.
-    * Use `utilis.py` to create a summary DataFrame of interactions.
+    * Create a summary DataFrame of interactions.
 
 5.  **Network Construction (NetworkX):**
     * (For `network_analysis.ipynb`) Construct a directed `networkx` graph (nodes=subreddits, edges=hyperlinks).
     * Attach post properties (sentiment, LIWC) as edge attributes.
     * Create a "signed network" from net sentiment between nodes (`plotting.py`).
     * Calculate shortest paths between key national communities.
+
+### Note on Country Representation
+Country-based subreddits are used as proxies for national communities. We acknowledge that not all users in these spaces are actually from the corresponding country. Still, since our goal is to see whether the “world of Reddit” reflects real-world dynamics, we treat these interactions as meaningful indicators of perceived international relationships.
 
 ## Proposed Timeline
 
@@ -105,12 +108,12 @@ Our primary dataset is the `soc-redditHyperlinks` corpus. We are not adding exte
 
 * **Dario: Cluster and Community analysis Lead**
     * **Tasks:** Political ideology filtering (`filter_politic_subreddits.ipynb`). Performed K-Means and t-SNE. Faction analysis (interactions, evolution). Handles faction/network plotting. Writes Readme.
-    * **Milestone:** Delivers `politic_subreddit.csv` and analysis in `result.ipynb`.
+    * **Milestone:** Delivers `politic_subreddit.csv` and analysis in `results.ipynb`.
 
 * **Noemi: Chain of Interactions and Sport analysis Lead**
     * **Tasks:** Delivered reciprocity probabilities (global, intra-country). Completed statistical analysis of linguistic style mirroring. Sport subreddits filtering (`filter_sports.ipynb`). 
     Expanded the dataset for country-subreddit mapping (`filter_countries_expanded.py`).
-    * **Milestone:** Delivers `df_countries_sport.csv` and analysis in `result.ipynb`.
+    * **Milestone:** Delivers `df_countries_sport.csv` and analysis in `results.ipynb`.
 
 * **Simon: Network Analysis Lead**
     * **Tasks:** Building core `networkx` graph (`network_analysis.ipynb`). Calculates graph properties (centrality, degree, paths).
@@ -118,4 +121,4 @@ Our primary dataset is the `soc-redditHyperlinks` corpus. We are not adding exte
 
 * **Pietro: Economics Analysis Lead**
     * **Tasks:** Economics subreddits filtering (`utils.py`). Analysis of economics-subreddit interactions, plotting results, and stats for `economic_links_with_geo_labeled2.csv`.
-    * **Milestone:** Delivers `economic_links_with_geo_labeled2.csv` and analysis in `result.ipynb`.
+    * **Milestone:** Delivers `economic_links_with_geo_labeled2.csv` and analysis in `results.ipynb`.
