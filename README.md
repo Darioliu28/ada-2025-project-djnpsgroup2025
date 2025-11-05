@@ -44,7 +44,7 @@ From these datasets, we generated new metadata by classifying subreddits into ca
 
 2.  **Political-Ideology-Subreddit Mapping:**
     * **Source:** Generated from unique subreddits (`filter_politic_subreddits.ipynb`).
-    * **Process:** Defined a keyword dictionary for 'left', 'right', and 'center_or_other' ideologies. Used fuzzy-matching (`data.py`) to find subreddits matching keywords with high confidence (score > 95).
+    * **Process:** Defined a keyword dictionary for 'left', 'right', and 'center_or_other' political ideologies. Used fuzzy-matching to find subreddits matching keywords with high confidence (score > 95).
     * **Management:** Produces `politic_subreddit.csv` to be merged with the main dataset.
 
 3.  **Sport-Subreddit Mapping:**
@@ -53,7 +53,7 @@ From these datasets, we generated new metadata by classifying subreddits into ca
     * **Management:** Produces `df_countries_sport.csv`, a dataset of posts with country-sport links.
 
 4.  **Subreddit Embeddings:**
-    * **Source:** Used pre-computed embeddings provided with the dataset (`load_embeddings`).
+    * **Source:** Used pre-computed embeddings provided with the dataset (`web-redditEmbeddings-subreddits.csv`).
     * **Process:** Used as features for clustering.
 
 ## Methods
@@ -120,5 +120,5 @@ Country-based subreddits are used as proxies for national communities. We acknow
     * **Milestone:** Delivers saved graph object and notebook with network statistics.
 
 * **Pietro: Economics Analysis Lead**
-    * **Tasks:** Economics subreddits filtering (`utils.py`). Analysis of economics-subreddit interactions, plotting results, and stats for `economic_links_with_geo_labeled2.csv`.
+    * **Tasks:** Economics subreddits filtering. Analysis of economics-subreddit interactions, plotting results, and stats for `economic_links_with_geo_labeled2.csv`.
     * **Milestone:** Delivers `economic_links_with_geo_labeled2.csv` and analysis in `results.ipynb`.
