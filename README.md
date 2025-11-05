@@ -49,7 +49,7 @@ From these datasets, we generated new metadata by classifying subreddits into ca
 
 3.  **Sport-Subreddit Mapping:**
     * **Source:** Generated from `df_countries_expanded` (`filter_sports.py`), looking for sport-country interactions.
-    * **Process:** Defined a sports keyword dictionary. Used fuzzy-matching ('src/data/dataFunctions.py') to find subreddits matching these keywords with high confidence.
+    * **Process:** Defined a sports keyword dictionary. Used fuzzy-matching (`src/data/dataFunctions.py`) to find subreddits matching these keywords with high confidence.
     * **Management:** Produces `df_countries_sport.csv`, a dataset of posts with country-sport links.
 
 4.  **Subreddit Embeddings:**
