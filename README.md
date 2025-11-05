@@ -53,7 +53,7 @@ From these datasets, we generated new metadata by classifying subreddits into ca
     * **Management:** Produces `df_countries_sport.csv`, a dataset of posts with country-sport links.
 
 4.  **Subreddit Embeddings:**
-    * **Source:** Used pre-computed embeddings provided with the dataset (`web-redditEmbeddings-subreddits.csv`).
+    * **Source:** Used pre-computed embeddings provided with the dataset `web-redditEmbeddings-subreddits.csv`.
     * **Process:** Used as features for clustering.
 
 ## Methods
