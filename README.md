@@ -2,7 +2,7 @@
 
 ## Abstract
 
-Society groups people by geography, interests, and culture. This project explores whether Reddit reflects these aggregation dynamics, questioning if it's a valid proxy for real-world interactions or just a skewed representation. The core idea is to map subreddits to entities like countries (e.g., r/italy) or topics (e.g., r/politic) to analyze their interaction patterns. The goal is twofold: first, determine if digital group components (like language or interests) highlight real-world relationships. Second, study "country-based" groups by analyzing their engagement with thematic subreddits. We aim to uncover if digital interactions can reveal cultural traits and intrinsic dynamics present in their real-world counterparts.
+People in the society tend to create communities based on geography, interests, and culture. This project explores whether Reddit reflects these aggregation dynamics, questioning if it's a valid proxy for real-world interactions or just a skewed representation. The core idea is to map subreddits to entities like countries (e.g., r/italy) or topics (e.g., r/politic) to analyze their interaction patterns. The goal is twofold: first, study "country-based" groups by analyzing their engagement with thematic subreddits. Second, determining if inter-subreddit interactions have an influence on future posts. We aim to uncover if digital interactions can reveal cultural traits and intrinsic dynamics present in their real-world counterparts.
 
 ## Research Questions
 
@@ -11,13 +11,14 @@ Our analysis follows hierarchical questions, from data processing to high-level 
 1.  **Subreddit-to-Topic Mapping:** How accurately can we map subreddit names to real-world entities (countries) and topics (politics, sports) using keyword, fuzzy matching, and rule-based heuristics?
 2.  **Embedding-based Clustering:** Can we identify "natural" community clusters from subreddit embeddings using unsupervised methods (K-Means, t-SNE)? How well do these align with our manual country or topic labels?
 3.  **Community Network Analysis:** What is the macro-structure of the Reddit interaction network aggregated by country or topic? Can we identify factions or one-to-one relationships (e.g., between countries) by analyzing the hyperlink graph?
-4.  **Political Landscape Analysis:** How do national communities interact with subreddits of different political ideologies? Can we quantify and visualize political "echo chambers" or "bridges" through sentiment and link analysis?
-5.  **Thematic Interaction (Case Study):** What are the dominant sports-related topics for different national communities, and what does this reveal about cross-cultural engagement?
+4.  **Mirroring Analysis:**  To what extent do reciprocal online interactions exhibit stylistic mirroring, and how does this level of similarity compare to a random baseline?
+5.  **Political Landscape Analysis:** How do national communities interact with subreddits of different political ideologies? Can we quantify and visualize political "echo chambers" or "bridges" through sentiment and link analysis?
+6.  **Thematic Interaction (Case Study):** What are the dominant sports-related topics for different national communities, and what does this reveal about cross-cultural engagement?
 
 **Further Questions:**
 * Are there "broker" subreddits (high centrality) bridging disconnected national or political communities?
 * Do linguistic features (LIWC) and sentiment differ in posts linking *within* (country-to-country) versus *between* communities (country-to-politics)?
-* Can 2014-2016 geopolitical relationships be seen in national subreddit interaction patterns?
+* Can 2014-2016 economic relationships be seen in national subreddit interaction patterns?
 
 ## Data Setup
 
@@ -77,7 +78,7 @@ Our primary dataset is the `soc-redditHyperlinks` corpus. We are not adding exte
     * Use `utilis.py` to create a summary DataFrame of interactions.
 
 5.  **Network Construction (NetworkX):**
-    * (Per `network_analysis.ipynb`) Construct a directed `networkx` graph (nodes=subreddits, edges=hyperlinks).
+    * (For `network_analysis.ipynb`) Construct a directed `networkx` graph (nodes=subreddits, edges=hyperlinks).
     * Attach post properties (sentiment, LIWC) as edge attributes.
     * Create a "signed network" from net sentiment between nodes (`plotting.py`).
     * Calculate shortest paths between key national communities.
@@ -109,7 +110,6 @@ Our primary dataset is the `soc-redditHyperlinks` corpus. We are not adding exte
 * **Noemi: Chain of Interactions and Sport analysis Lead**
     * **Tasks:** Delivered reciprocity probabilities (global, intra-country). Completed statistical analysis of linguistic style mirroring. Sport subreddits filtering (`filter_sports.ipynb`). 
     Expanded the dataset for country-subreddit mapping (`filter_countries_expanded.py`).
-    Organized the repository.
     * **Milestone:** Delivers `df_countries_sport.csv` and analysis in `result.ipynb`.
 
 * **Simon: Network Analysis Lead**
