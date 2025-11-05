@@ -40,17 +40,17 @@ From these datasets, we generated new metadata by classifying subreddits into ca
 1.  **Country-Subreddit Mapping:**
     * **Source:** Generated from unique subreddits.
     * **Process:** (Notebooks: `make_initial_subreddit_maps.ipynb`, `filter_matches.ipynb`). We built a map of country names, demonyms, and codes. We applied matching rules (direct, token, fuzzy string matching with `rapidfuzz`) to map names (e.g., 'r/norge' to 'Norway'). An initial 1700-subreddit mapping was manually checked and filtered. A much bigger country related dataset has been also produced for some analysis; please check in the section **Mapping Subreddits to Country** in `results.ipynb` for a better description.
-    * **Management:** Final mapping saved as `subreddit_matches_approved.csv` for lookup.
+    * **Management:** Final mapping saved as `data/subreddit_matches_approved.csv` for lookup.
 
 2.  **Political-Ideology-Subreddit Mapping:**
     * **Source:** Generated from unique subreddits (`src/data/filter_politic_subreddits.ipynb`).
     * **Process:** Defined a keyword dictionary for 'left', 'right', and 'center_or_other' political ideologies. Used fuzzy-matching to find subreddits matching keywords with high confidence (score > 95).
-    * **Management:** Produces `politic_subreddit.csv` to be merged with the main dataset.
+    * **Management:** Produces `data/politic_subreddit.csv` to be merged with the main dataset.
 
 3.  **Sport-Subreddit Mapping:**
-    * **Source:** Generated from `df_countries_expanded` (`src/data/filter_sports.py`), looking for sport-country interactions.
+    * **Source:** Generated from `data/df_countries_expanded.csv` (`src/data/filter_sports.py`), looking for sport-country interactions.
     * **Process:** Defined a sports keyword dictionary. Used fuzzy-matching (`src/data/dataFunctions.py`) to find subreddits matching these keywords with high confidence.
-    * **Management:** Produces `df_countries_sport.csv`, a dataset of posts with country-sport links.
+    * **Management:** Produces `data/df_countries_sport.csv`, a dataset of posts with country-sport links.
 
 4.  **Subreddit Embeddings:**
     * **Source:** Used pre-computed embeddings provided with the dataset `web-redditEmbeddings-subreddits.csv`.
@@ -104,21 +104,21 @@ Country-based subreddits are used as proxies for national communities. We acknow
 
 * **Julie: Data & Country Mapping Lead**
     * **Tasks:** Cleaned dataset for country-subreddit mapping. Runs/refines country mapping (`make_initial_subreddit_maps.ipynb`). Analysis of one-to-one country interactions.
-    * **Milestone:** Delivers final `subreddit_matches_approved.csv`.
+    * **Milestone:** Delivers final `data/subreddit_matches_approved.csv`.
 
 * **Dario: Cluster and Community analysis Lead**
     * **Tasks:** Political ideology filtering (`filter_politic_subreddits.ipynb`). Performed K-Means and t-SNE. Faction analysis (interactions, evolution). Handles faction/network plotting. Writes Readme.
-    * **Milestone:** Delivers `politic_subreddit.csv` and analysis in `results.ipynb`.
+    * **Milestone:** Delivers `data/politic_subreddit.csv` and analysis in `results.ipynb`.
 
 * **Noemi: Chain of Interactions and Sport analysis Lead**
     * **Tasks:** Delivered reciprocity probabilities (global, intra-country). Completed statistical analysis of linguistic style mirroring. Sport subreddits filtering (`filter_sports.ipynb`). 
     Expanded the dataset for country-subreddit mapping (`src/data/filter_countries_expanded.py`).
-    * **Milestone:** Delivers `df_countries_sport.csv` and analysis in `results.ipynb`.
+    * **Milestone:** Delivers `data/df_countries_sport.csv` and analysis in `results.ipynb`.
 
 * **Simon: Network Analysis Lead**
     * **Tasks:** Building core `networkx` graph (`network_analysis.ipynb`). Calculates graph properties (centrality, degree, paths).
     * **Milestone:** Delivers saved graph object and notebook with network statistics.
 
 * **Pietro: Economics Analysis Lead**
-    * **Tasks:** Economics subreddits filtering. Analysis of economics-subreddit interactions, plotting results, and stats for `economic_links_with_geo_labeled2.csv`.
-    * **Milestone:** Delivers `economic_links_with_geo_labeled2.csv` and analysis in `results.ipynb`.
+    * **Tasks:** Economics subreddits filtering. Analysis of economics-subreddit interactions, plotting results, and stats for `data/economic_links_with_geo_labeled2.csv`.
+    * **Milestone:** Delivers `data/economic_links_with_geo_labeled2.csv` and analysis in `results.ipynb`.
