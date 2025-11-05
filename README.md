@@ -43,12 +43,12 @@ From these datasets, we generated new metadata by classifying subreddits into ca
     * **Management:** Final mapping saved as `subreddit_matches_approved.csv` for lookup.
 
 2.  **Political-Ideology-Subreddit Mapping:**
-    * **Source:** Generated from unique subreddits (`filter_politic_subreddits.ipynb`).
+    * **Source:** Generated from unique subreddits (`src/data/filter_politic_subreddits.ipynb`).
     * **Process:** Defined a keyword dictionary for 'left', 'right', and 'center_or_other' political ideologies. Used fuzzy-matching to find subreddits matching keywords with high confidence (score > 95).
     * **Management:** Produces `politic_subreddit.csv` to be merged with the main dataset.
 
 3.  **Sport-Subreddit Mapping:**
-    * **Source:** Generated from `df_countries_expanded` (`filter_sports.py`), looking for sport-country interactions.
+    * **Source:** Generated from `df_countries_expanded` (`src/data/filter_sports.py`), looking for sport-country interactions.
     * **Process:** Defined a sports keyword dictionary. Used fuzzy-matching (`src/data/dataFunctions.py`) to find subreddits matching these keywords with high confidence.
     * **Management:** Produces `df_countries_sport.csv`, a dataset of posts with country-sport links.
 
@@ -63,7 +63,7 @@ From these datasets, we generated new metadata by classifying subreddits into ca
     * Load and merge our generated mappings, tagging source and target subreddits.
 
 2.  **Clustering & Visualization:**
-    * Apply K-Means clustering (using `plotting.py` elbow-plot for optimal *k*) on embeddings to find "natural" clusters.
+    * Apply K-Means clustering (using `src/utilis/plotting.py` elbow-plot for optimal *k*) on embeddings to find "natural" clusters.
     * Visualize clusters using t-SNE.
     * Generate a final network visualization (`matplotlib`/`networkx`) showing the signed, aggregated network of country/political interactions.
 
@@ -80,7 +80,7 @@ From these datasets, we generated new metadata by classifying subreddits into ca
 5.  **Network Construction (NetworkX):**
     * (For `network_analysis.ipynb`) Construct a directed `networkx` graph (nodes=subreddits, edges=hyperlinks).
     * Attach post properties (sentiment, LIWC) as edge attributes.
-    * Create a "signed network" from net sentiment between nodes (`plotting.py`).
+    * Create a "signed network" from net sentiment between nodes (`src/utilis/plotting.py`).
     * Calculate shortest paths between key national communities.
 
 ### Note on Country Representation
@@ -112,7 +112,7 @@ Country-based subreddits are used as proxies for national communities. We acknow
 
 * **Noemi: Chain of Interactions and Sport analysis Lead**
     * **Tasks:** Delivered reciprocity probabilities (global, intra-country). Completed statistical analysis of linguistic style mirroring. Sport subreddits filtering (`filter_sports.ipynb`). 
-    Expanded the dataset for country-subreddit mapping (`filter_countries_expanded.py`).
+    Expanded the dataset for country-subreddit mapping (`src/data/filter_countries_expanded.py`).
     * **Milestone:** Delivers `df_countries_sport.csv` and analysis in `results.ipynb`.
 
 * **Simon: Network Analysis Lead**
