@@ -17,7 +17,6 @@ import re
 from pathlib import Path
 from typing import Iterable, List, Dict, Set
 
-# === Columns FOR POST PROPERTIES ===
 post_props_cols = [
     "num_chars", "num_chars_no_space", "frac_alpha", "frac_digits",
     "frac_upper", "frac_spaces", "frac_special", "num_words",
@@ -39,123 +38,7 @@ post_props_cols = [
     "LIWC_Motion", "LIWC_Space", "LIWC_Time", "LIWC_Work", "LIWC_Achiev",
     "LIWC_Leisure", "LIWC_Home", "LIWC_Money", "LIWC_Relig", "LIWC_Death",
     "LIWC_Assent", "LIWC_Dissent", "LIWC_Nonflu", "LIWC_Filler"
-]
-
-# === COUNTRY INTERACTIONS PROCESSING ===
-def process_country_interactions(df_combined, mapping_csv_path, remove_self_loops=True):
-    """
-    Loads a country mapping file, merges it with interaction data,
-    and aggregates country-to-country interactions.
-
-    Args:
-        df_combined (pd.DataFrame): The main DataFrame of interactions 
-                                    (must have 'SOURCE_SUBREDDIT' and 'TARGET_SUBREDDIT').
-        mapping_csv_path (str): Path to the CSV file containing 
-                                'subreddit' and 'country'/'predicted_country' columns.
-        remove_self_loops (bool): If True, removes interactions where 
-                                  source_country == target_country.
-
-    Returns:
-        tuple: (country_interactions, merged_valid)
-            - country_interactions (pd.DataFrame): Aggregated counts 
-              (source_country, target_country, n_interactions).
-            - merged_valid (pd.DataFrame): The full merged DataFrame with 
-              'source_country' and 'target_country' columns, filtered to non-NaN rows.
-    """
-    
-    # --- 1. Load and clean mapping file ---
-    try:
-        mapping_df = pd.read_csv(mapping_csv_path)
-    except FileNotFoundError:
-        print(f"Error: Mapping file not found at {mapping_csv_path}")
-        return pd.DataFrame(), pd.DataFrame() # Return empty DataFrames on error
-
-    mapping_df.columns = [c.strip().lower() for c in mapping_df.columns]
-    
-    # Standardize country column name
-    if 'country' not in mapping_df.columns and 'predicted_country' in mapping_df.columns:
-        mapping_df.rename(columns={'predicted_country': 'country'}, inplace=True)
-        
-    # Check for required columns
-    if 'subreddit' not in mapping_df.columns or 'country' not in mapping_df.columns:
-        print(f"Error: Mapping file {mapping_csv_path} must have 'subreddit' and 'country' columns.")
-        return pd.DataFrame(), pd.DataFrame()
-
-    # --- 2. Merge country info onto source and target subreddits ---
-    merged = (
-        df_combined
-        .merge(mapping_df[['subreddit', 'country']], how='left',
-               left_on='SOURCE_SUBREDDIT', right_on='subreddit')
-        .rename(columns={'country': 'source_country'})
-        .drop(columns=['subreddit'])
-        .merge(mapping_df[['subreddit', 'country']], how='left',
-               left_on='TARGET_SUBREDDIT', right_on='subreddit')
-        .rename(columns={'country': 'target_country'})
-        .drop(columns=['subreddit'])
-    )
-
-    # --- 3. Keep only interactions where both countries are known ---
-    merged_valid = merged.dropna(subset=['source_country', 'target_country'])
-
-    # --- 4. Aggregate counts of inter-country interactions ---
-    country_interactions = (
-        merged_valid.groupby(['source_country', 'target_country'])
-        .size()
-        .reset_index(name='n_interactions')
-        .sort_values(by='n_interactions', ascending=False)
-    )
-
-    if remove_self_loops:
-        country_interactions = country_interactions.query("source_country != target_country")
-
-    return country_interactions, merged_valid
-
-
-def map_posts_to_countries(df_posts, mapping_csv_path):
-    """
-    Merges a post DataFrame with a country mapping file based on SOURCE_SUBREDDIT.
-
-    Args:
-        df_posts (pd.DataFrame): The main DataFrame of posts (e.g., df_combined). 
-                                 Must have 'SOURCE_SUBREDDIT'.
-        mapping_csv_path (str): Path to the CSV file containing 
-                                'subreddit' and 'country'/'predicted_country'.
-
-    Returns:
-        pd.DataFrame: The original df_posts with a new 'country' column.
-                      Rows without a country match will have NaN 
-                      in the 'country' column.
-    """
-    
-    # --- 1. Load and clean mapping file ---
-    try:
-        mapping_df = pd.read_csv(mapping_csv_path)
-    except FileNotFoundError:
-        print(f"Error: Mapping file not found at {mapping_csv_path}")
-        # Return original df with an empty 'country' col as a precaution
-        return df_posts.assign(country=pd.NA) 
-
-    mapping_df.columns = [c.strip().lower() for c in mapping_df.columns]
-    
-    # Standardize country column name
-    if 'country' not in mapping_df.columns and 'predicted_country' in mapping_df.columns:
-        mapping_df.rename(columns={'predicted_country': 'country'}, inplace=True)
-        
-    if 'subreddit' not in mapping_df.columns or 'country' not in mapping_df.columns:
-        print(f"Error: Mapping file {mapping_csv_path} must have 'subreddit' and 'country'.")
-        return df_posts.assign(country=pd.NA)
-
-    # --- 2. Merge country info onto source subreddit ---
-    # We use a left merge to keep all original posts
-    df_with_countries = df_posts.merge(
-        mapping_df[['subreddit', 'country']],
-        how='left',
-        left_on='SOURCE_SUBREDDIT',
-        right_on='subreddit'
-    ).drop(columns=['subreddit']) # Drop the redundant 'subreddit' col
-    
-    return df_with_countries
-
+    ]
 # === 1. CLUSTERS WITH EMBEDDING ANALYSIS ===
 
 def prepare_embeddings_for_clustering(df_emb):
@@ -351,13 +234,13 @@ def find_strict_subreddits(df_countries, df_embeddings):
     emb_cols = [c for c in df_embeddings.columns if c != "subreddit"]
     
     country_to_embeddings = {}
-    for country, group in df_approved_emb.groupby("predicted_country"):
+    for country, group in df_approved_emb.groupby("country"):
         country_to_embeddings[country] = group[emb_cols].values
 
     strict_subs = []
     for _, row in df_approved_emb.iterrows():
         subreddit = row["subreddit"]
-        country = row["predicted_country"]
+        country = row["country"]
         sub_emb = row[emb_cols].values.reshape(1, -1)
         
         same_country_emb = country_to_embeddings[country]
@@ -391,7 +274,7 @@ def find_closest_dissimilar_subreddits(df_strict_approved, df_embeddings):
     X = scaler.fit_transform(df_emb_strict[embedding_cols])
     
     subreddit_names = df_emb_strict["subreddit"].tolist()
-    sub_to_country = dict(zip(df_strict_approved["subreddit"], df_strict_approved["predicted_country"]))
+    sub_to_country = dict(zip(df_strict_approved["subreddit"], df_strict_approved["country"]))
     
     sim_matrix = cosine_similarity(X, X)
     
@@ -411,7 +294,7 @@ def find_closest_dissimilar_subreddits(df_strict_approved, df_embeddings):
         
         most_similar_subreddits.append({
             "subreddit": sub,
-            "predicted_country": sub_to_country.get(sub),
+            "country": sub_to_country.get(sub),
             "most_similar_subreddit": closest_sub,
             "most_similar_country": sub_to_country.get(closest_sub),
             "similarity_score": similarities[closest_idx]
@@ -422,75 +305,12 @@ def find_closest_dissimilar_subreddits(df_strict_approved, df_embeddings):
 
 # === 3. NETWORK-BASED FACTION ANALYSIS WITH POSITIVE POSTS ===
 
-def calculate_country_activity(df_post_with_1_country, df_countries):
-    """Counts total posts originating from each country's subreddits."""
-    sub_to_country = df_countries.set_index("subreddit")["predicted_country"].to_dict()
-    df_posts = df_post_with_1_country.copy()
-    df_posts["country"] = df_posts["SOURCE_SUBREDDIT"].map(sub_to_country)
-    df_posts = df_posts.dropna(subset=["country"])
-    
-    country_activity = (
-        df_posts.groupby("country")
-        .size()
-        .reset_index(name="num_posts")
-        .sort_values("num_posts", ascending=False)
-        .reset_index(drop=True)
-    )
-    return country_activity
-
-def get_signed_country_links(df_post_with_1_country, df_countries):
-    """
-    Aggregates all links (positive and negative) between countries.
-    """
-    df_posts = _map_countries(df_post_with_1_country.copy(), df_countries)
-    df_posts = df_posts[df_posts['source_country'] != df_posts['target_country']]
-
-    # Count positive links
-    positive_links = (
-        df_posts[df_posts["LINK_SENTIMENT"] == 1]
-        .groupby(["source_country", "target_country"])
-        .size()
-        .reset_index(name="positive_posts")
-    )
-    
-    # Count negative links
-    negative_links = (
-        df_posts[df_posts["LINK_SENTIMENT"] == -1]
-        .groupby(["source_country", "target_country"])
-        .size()
-        .reset_index(name="negative_posts")
-    )
-    
-    # Merge and fill NaNs
-    signed_links = pd.merge(
-        positive_links, 
-        negative_links, 
-        on=["source_country", "target_country"], 
-        how="outer"
-    ).fillna(0)
-    
-    # Calculate net sentiment
-    signed_links["net_sentiment"] = signed_links["positive_posts"] - signed_links["negative_posts"]
-    return signed_links
-
 def _map_countries(df_posts, df_countries):
     """Helper to map source/target subreddits to countries."""
-    sub_to_country = df_countries.set_index("subreddit")["predicted_country"].to_dict()
+    sub_to_country = df_countries.set_index("subreddit")["country"].to_dict()
     df_posts['source_country'] = df_posts['SOURCE_SUBREDDIT'].map(sub_to_country)
     df_posts['target_country'] = df_posts['TARGET_SUBREDDIT'].map(sub_to_country)
     return df_posts.dropna(subset=["source_country", "target_country"])
-
-def get_positive_country_links(df_post_with_1_country, df_countries):
-    """Counts positive-sentiment posts between countries."""
-    df_positive = df_post_with_1_country[df_post_with_1_country["LINK_SENTIMENT"] == 1].copy()
-    df_positive = _map_countries(df_positive, df_countries)
-    
-    country_links = (
-        df_positive.groupby(["source_country", "target_country"])
-        .size()
-        .reset_index(name="num_positive_posts")
-    )
-    return country_links
 
 def build_interaction_graph(country_links_df, weight_col="num_positive_posts"):
     """Builds a NetworkX graph from a country links DataFrame."""
@@ -543,9 +363,8 @@ def diagnose_unfactioned_countries(df_countries, factions_df, df_post_with_1_cou
 
     # --- 1. Map countries to all posts ---
     # This is needed for all subsequent logic
-    # We use the internal helper _map_countries
     print("Mapping countries to post data...")
-    sub_to_country = df_countries.drop_duplicates(subset='subreddit').set_index("subreddit")["predicted_country"].to_dict()
+    sub_to_country = df_countries.drop_duplicates(subset='subreddit').set_index("subreddit")["country"].to_dict()
     
     # Create a mapped copy of the posts DataFrame
     df_posts_mapped = df_post_with_1_country.copy()
@@ -557,7 +376,7 @@ def diagnose_unfactioned_countries(df_countries, factions_df, df_post_with_1_cou
     df_negative_posts = df_posts_mapped[df_posts_mapped["LINK_SENTIMENT"] == -1].copy()
 
     # --- 3. Identify country sets ---
-    all_countries = set(df_countries["predicted_country"].dropna().unique())
+    all_countries = set(df_countries["country"].dropna().unique())
     countries_in_factions = set(factions_df["country"].unique())
     countries_not_in_faction = sorted(all_countries - countries_in_factions)
 
@@ -569,7 +388,7 @@ def diagnose_unfactioned_countries(df_countries, factions_df, df_post_with_1_cou
     reasons = defaultdict(list)
     
     # Create a set of country subreddits for faster filtering
-    country_subreddit_map = df_countries.groupby('predicted_country')['subreddit'].apply(set).to_dict()
+    country_subreddit_map = df_countries.groupby('country')['subreddit'].apply(set).to_dict()
 
     for country in countries_not_in_faction:
         
@@ -621,13 +440,12 @@ def diagnose_unfactioned_countries(df_countries, factions_df, df_post_with_1_cou
     print("Diagnosis complete.")
     return missing_countries_summary
 
-def detect_normalized_factions(df_post_with_1_country, df_countries):
+def detect_normalized_factions(df_post_between_countries):
     """
     Detects factions based on normalized positive interaction weights.
     Weight = N_posts(A,B) / sqrt(TotalPosts(A) * TotalPosts(B))
     """
-    df_positive = df_post_with_1_country[df_post_with_1_country["LINK_SENTIMENT"] == 1].copy()
-    df_positive = _map_countries(df_positive, df_countries)
+    df_positive = df_post_between_countries[df_post_between_countries["LINK_SENTIMENT"] == 1].copy()
     
     country_links = (
         df_positive.groupby(["source_country", "target_country"])
@@ -666,30 +484,6 @@ def map_countries_to_posts(df_posts, df_countries):
     df_links_with_countries["year_quarter"] = df_links_with_countries["TIMESTAMP"].dt.to_period("Q")
     return df_links_with_countries.dropna(subset=['year_quarter'])
     
-def analyze_factions_over_time(df_post_between_countries):
-    """Calculates factions for each quarter based on raw post counts."""
-    quarterly_summary = []
-    
-    for period, group in df_post_between_countries.groupby("year_quarter"):
-        positive_group = group[group["LINK_SENTIMENT"] == 1]
-        if positive_group.empty:
-            continue
-            
-        quarter_links = (
-            positive_group.groupby(["source_country", "target_country"])
-            .size()
-            .reset_index(name="num_positive_posts")
-        )
-        
-        G_quarter = build_interaction_graph(quarter_links, weight_col="num_positive_posts")
-        if G_quarter.number_of_nodes() == 0:
-            continue
-            
-        summary, _ = detect_factions(G_quarter)
-        summary["year_quarter"] = str(period)
-        quarterly_summary.append(summary)
-
-    return pd.concat(quarterly_summary).reset_index(drop=True)
 
 def analyze_source_normalized_factions_over_time(df_post_between_countries):
     """
@@ -841,23 +635,20 @@ def find_switch_triggers(quarterly_factions_summary_df, df_post_between_countrie
 # === 5. RECIPROCITY ANALYSIS ===
 
 def response_global(df_country):
-    ## --- 1. DataFrame Preparation ---
-    df_clean = df_country.dropna(subset=['SOURCE_COUNTRY', 'TARGET_COUNTRY'])
-    df_clean['TIMESTAMP'] = pd.to_datetime(df_clean['TIMESTAMP'])
     
     # Sort the entire DataFrame by TIMESTAMP *once* at the beginning.
     # This is fundamental to our logic.
-    df_clean = df_clean.sort_values(by='TIMESTAMP')
+    df_country = df_country.sort_values(by='TIMESTAMP')
 
     # Create a 'pair_key' using frozenset to group (A, B) and (B, A) together
-    df_clean['pair_key'] = df_clean.apply(
-        lambda row: frozenset([row['SOURCE_COUNTRY'], row['TARGET_COUNTRY']]),
+    df_country['pair_key'] = df_country.apply(
+        lambda row: frozenset([row['source_country'], row['target_country']]),
         axis=1
     )
     # Filter out pairs that only have one interaction
-    pair_counts = df_clean['pair_key'].value_counts()
+    pair_counts = df_country['pair_key'].value_counts()
     valid_pairs = pair_counts[pair_counts > 1].index
-    df_analysis = df_clean[df_clean['pair_key'].isin(valid_pairs)]
+    df_analysis = df_country[df_country['pair_key'].isin(valid_pairs)]
 
     print(f"DataFrame ready. Analyzing {len(valid_pairs)} pairs.")
 
@@ -883,20 +674,20 @@ def response_global(df_country):
         
         # Define roles based on that first interaction
         # country_A is the initiator, country_B is the responder
-        country_A = first_interaction['SOURCE_COUNTRY']
-        country_B = first_interaction['TARGET_COUNTRY']
+        country_A = first_interaction['source_country']
+        country_B = first_interaction['target_country']
         
         # --- Get all interactions for these defined roles ---
         
         # Get all A -> B interactions (initiations)
         df_A_to_B = df_pair[
-            (df_pair['SOURCE_COUNTRY'] == country_A) & 
-            (df_pair['TARGET_COUNTRY'] == country_B)
+            (df_pair['source_country'] == country_A) & 
+            (df_pair['target_country'] == country_B)
         ]
         # Get all B -> A interactions (responses)
         df_B_to_A = df_pair[
-            (df_pair['SOURCE_COUNTRY'] == country_B) & 
-            (df_pair['TARGET_COUNTRY'] == country_A)
+            (df_pair['source_country'] == country_B) & 
+            (df_pair['target_country'] == country_A)
         ]
 
         # If the "responder" (B) has never posted, 
@@ -954,8 +745,8 @@ def response_intra_country(df_combined):
     #    - Countries must not be NaN
     #    - Subreddits must be DIFFERENT
     df_intra = df_combined[
-        (df_combined['SOURCE_COUNTRY'] == df_combined['TARGET_COUNTRY']) &
-        (df_combined['SOURCE_COUNTRY'].notna()) &
+        (df_combined['source_country'] == df_combined['target_country']) &
+        (df_combined['source_country'].notna()) &
         (df_combined['SOURCE_SUBREDDIT'] != df_combined['TARGET_SUBREDDIT'])
     ].copy()
 
@@ -1052,13 +843,13 @@ def response_intra_country(df_combined):
 
 # === 6. RESPONSE SIMILARITY ANALYSIS ===
 
-def find_reciprocity_pairs_and_similarity(df_interactions, features_list, matches_csv):
+def find_reciprocity_pairs_and_similarity(df_interactions, features_list, df_countries):
     """
     Finds A->B => B->A pairs (all sentiments) within 7 days 
     and calculates cosine similarity using only the 'features_list'.
     """
     WINDOW_DAYS = 7
-    country_subs_list = pd.read_csv(matches_csv)['Subreddit'].tolist()
+    country_subs_list = df_countries['subreddit'].tolist()
     # TRIGGER = Any sub posting to a country
     df_triggers = df_interactions[
         (df_interactions['TARGET_SUBREDDIT'].isin(country_subs_list)) &
@@ -1113,9 +904,8 @@ def find_reciprocity_pairs_and_similarity(df_interactions, features_list, matche
                         
     return similarity_scores
 
-def response_similarity(df_combined, matches_csv):
+def response_similarity(df_combined, df_countries):
     # --- 1. Style Feature Definition ---
-    df_combined['TIMESTAMP'] = pd.to_datetime(df_combined['TIMESTAMP'])
     style_features_list = [
         # Tone/Sentiment Measures 
         'sent_pos',
@@ -1153,7 +943,7 @@ def response_similarity(df_combined, matches_csv):
     reciprocity_similarities = find_reciprocity_pairs_and_similarity(
         df_analysis, 
         style_features_list,  
-        matches_csv
+        df_countries
     )
 
     # --- 4. Baseline Analysis Execution (Random Control) ---
@@ -1257,391 +1047,3 @@ def response_similarity(df_combined, matches_csv):
 
     else:
         print("\nAnalysis not completed (missing reciprocity or baseline data).")
-
-# === 7. POLITICAL IDEOLOGY ANALYSIS ===
-
-def analyze_political_activity(df_countries, df_politics):
-    """
-    Analyzes the activity of political subreddits based on all posts.
-    
-    Calculates:
-    1. Total posts involving a political subreddit (as source or target).
-    2. The most active political subreddit.
-    3. The most active political ideology.
-    
-    Args:
-        df_countries (pd.DataFrame): All posts.
-        df_politics (pd.DataFrame): The DataFrame of political subreddits, 
-                                    containing 'Matched Subreddit' and 'Ideology'.
-
-    Returns:
-        dict: A dictionary containing the analysis results.
-    """
-    print("Analyzing political subreddit activity...")
-    
-    # --- Step 1: Filter posts involving political subreddits ---
-    politic_subs_set = set(df_politics['Matched Subreddit'])
-    
-    df_politic_posts = df_countries[
-        df_countries['SOURCE_SUBREDDIT'].isin(politic_subs_set) |
-        df_countries['TARGET_SUBREDDIT'].isin(politic_subs_set)
-    ].copy()
-    
-    total_posts = len(df_politic_posts)
-    if total_posts == 0:
-        print("No posts found involving the provided political subreddits.")
-        return {
-            'total_political_posts': 0,
-            'most_active_subreddit': None,
-            'most_active_ideology': None,
-            'ideology_activity_summary': pd.Series(),
-            'subreddit_activity_summary': pd.Series()
-        }
-
-    # --- Step 2: Find most active subreddit ---
-    
-    # Combine all mentions of subreddits from these posts
-    all_mentions = pd.concat([
-        df_politic_posts['SOURCE_SUBREDDIT'], 
-        df_politic_posts['TARGET_SUBREDDIT']
-    ])
-    
-    # Filter this list to *only* include the political subreddits
-    # (This correctly attributes activity to them, not to their neighbors)
-    politic_mentions_only = all_mentions[all_mentions.isin(politic_subs_set)]
-    
-    # Get counts for each political subreddit
-    subreddit_activity = politic_mentions_only.value_counts()
-    most_active_sub_name = subreddit_activity.index[0]
-    most_active_sub_count = subreddit_activity.iloc[0]
-    
-    # --- Step 3: Find most active ideology ---
-    
-    # Create the subreddit -> ideology map
-    ideology_map = df_politics.set_index('Matched Subreddit')['Ideology']
-    
-    # Convert activity Series to DataFrame for easier mapping
-    subreddit_activity_df = subreddit_activity.reset_index()
-    subreddit_activity_df.columns = ['subreddit', 'count']
-    
-    # Map ideologies
-    subreddit_activity_df['ideology'] = subreddit_activity_df['subreddit'].map(ideology_map)
-    
-    # Sum activity by ideology
-    ideology_activity = subreddit_activity_df.groupby('ideology')['count'].sum().sort_values(ascending=False)
-    most_active_ideology_name = ideology_activity.index[0]
-    most_active_ideology_count = ideology_activity.iloc[0]
-
-    # --- Step 4: Prepare results ---
-    results = {
-        'total_political_posts': total_posts,
-        'most_active_subreddit': {
-            'name': most_active_sub_name,
-            'posts': int(most_active_sub_count)
-        },
-        'most_active_ideology': {
-            'name': most_active_ideology_name,
-            'posts': int(most_active_ideology_count)
-        },
-        'ideology_activity_summary': ideology_activity,
-        'subreddit_activity_summary': subreddit_activity
-    }
-    
-    print("Activity analysis complete.")
-    return results
-
-def analyze_pure_cross_interactions(df_posts, df_countries, df_politics, link_sentiment=1, year=2015):
-    """
-    Analyzes interactions between 'pure' country subreddits and 'pure'
-    political subreddits, based on the provided dataframes.
-
-    'Pure' means subreddits are mutually exclusive between the two sets.
-    
-    Args:
-        df_posts (pd.DataFrame): All posts, must include 'TIMESTAMP', 
-                                    'LINK_SENTIMENT', 'SOURCE_SUBREDDIT', 
-                                    'TARGET_SUBREDDIT'.
-        df_countries (pd.DataFrame): Approved country subreddits.
-        df_politics (pd.DataFrame): Discovered political subreddits (from 
-                                    find_political_subreddits).
-        link_sentiment (int, optional): Filter by sentiment. 
-                                        1=positive, -1=negative, 0=neutral, 
-                                        None=all. Defaults to 1.
-        year (int, optional): Filter by a specific year. 
-                              None=all years. Defaults to 2015.
-
-    Returns:
-        pd.DataFrame: A summary table with Countries as rows, 
-                      Ideologies as columns, and interaction counts.
-    """
-    print("--- Step 1: Create Mutually Exclusive Subreddit Sets ---")
-    
-    # 1. Create sets
-    country_subs_all = set(df_countries['subreddit'])
-    politic_subs_all = set(df_politics['Matched Subreddit'])
-
-    # 2. Create "pure" sets
-    country_subs_pure = country_subs_all - politic_subs_all
-    politic_subs_pure = politic_subs_all - country_subs_all
-    
-    print(f"Loaded {len(country_subs_pure)} 'Pure' Country Subreddits.")
-    print(f"Loaded {len(politic_subs_pure)} 'Pure' Political Subreddits.")
-
-    # --- Step 2: Filter df_posts ---
-    print("\nFiltering DataFrame...")
-    df_filtered = df_posts.copy()
-
-    # 2a. Convert TIMESTAMP
-    try:
-        # Only convert if it's not already datetime
-        if not pd.api.types.is_datetime64_any_dtype(df_filtered['TIMESTAMP']):
-            df_filtered['TIMESTAMP'] = pd.to_datetime(df_filtered['TIMESTAMP'])
-        print("TIMESTAMP column is datetime.")
-    except Exception as e:
-        print(f"ERROR: Could not convert TIMESTAMP column: {e}")
-        return pd.DataFrame() # Fail gracefully if timestamp is bad
-
-    # 2b. Filter by sentiment
-    if link_sentiment is not None:
-        df_filtered = df_filtered[df_filtered['LINK_SENTIMENT'] == link_sentiment]
-        print(f"Rows after LINK_SENTIMENT == {link_sentiment} filter: {len(df_filtered)}")
-    
-    # 2c. Filter by year
-    if year is not None:
-        df_filtered = df_filtered[df_filtered['TIMESTAMP'].dt.year == year]
-        print(f"Rows after Year == {year} filter: {len(df_filtered)}")
-
-    # --- Step 3: Filter for Interactions (Both Directions) ---
-    print("\nFiltering for pure cross-interactions (both directions)...")
-    
-    condition1 = (
-        df_filtered['SOURCE_SUBREDDIT'].isin(country_subs_pure) &
-        df_filtered['TARGET_SUBREDDIT'].isin(politic_subs_pure)
-    )
-    condition2 = (
-        df_filtered['SOURCE_SUBREDDIT'].isin(politic_subs_pure) &
-        df_filtered['TARGET_SUBREDDIT'].isin(country_subs_pure)
-    )
-    
-    df_country_politic_interactions = df_filtered[condition1 | condition2].copy()
-    
-    if df_country_politic_interactions.empty:
-        print("Found 0 interactions matching all criteria. Returning empty summary.")
-        return pd.DataFrame(columns=['left', 'right', 'center_or_other', 'Total_Interactions'])
-        
-    print(f"Found {len(df_country_politic_interactions)} total interactions matching all criteria.")
-
-    # --- Step 4: Create Mapping Dictionaries ---
-    
-    # 4a. Country map
-    country_map = df_countries.drop_duplicates(subset='subreddit').set_index('subreddit')['predicted_country'].to_dict()
-    print(f"Loaded {len(country_map)} country mappings.")
-
-    # 4b. Ideology map
-    ideology_map = df_politics.set_index('Matched Subreddit')['Ideology'].to_dict()
-    print(f"Loaded {len(ideology_map)} ideology mappings.")
-    
-    # --- Step 5: Create Temporary Columns for Aggregation ---
-    
-    # 5a. Unified 'Country' column
-    df_country_politic_interactions['Country'] = (
-        df_country_politic_interactions['SOURCE_SUBREDDIT'].map(country_map).fillna(
-            df_country_politic_interactions['TARGET_SUBREDDIT'].map(country_map)
-        )
-    )
-
-    # 5b. Unified 'Ideology' column
-    df_country_politic_interactions['Ideology'] = (
-        df_country_politic_interactions['SOURCE_SUBREDDIT'].map(ideology_map).fillna(
-            df_country_politic_interactions['TARGET_SUBREDDIT'].map(ideology_map)
-        )
-    )
-    print("Temporary 'Country' and 'Ideology' columns created.")
-
-    # --- Step 6: Create the Final Summary DataFrame ---
-    print("\nAggregating results...")
-    
-    df_final = df_country_politic_interactions.dropna(subset=['Country', 'Ideology'])
-    
-    if df_final.empty:
-        print("No valid interactions after mapping. Returning empty summary.")
-        return pd.DataFrame(columns=['left', 'right', 'center_or_other', 'Total_Interactions'])
-
-    df_ideology_summary = df_final.groupby(['Country', 'Ideology']).size().unstack(level='Ideology', fill_value=0)
-    
-    # Ensure all three ideology columns exist, even if there's no data
-    for col in ['left', 'right', 'center_or_other']:
-        if col not in df_ideology_summary.columns:
-            df_ideology_summary[col] = 0
-
-    # Add 'Total_Interactions'
-    df_ideology_summary['Total_Interactions'] = df_ideology_summary.sum(axis=1)
-    
-    # Sort
-    df_ideology_summary = df_ideology_summary.sort_values('Total_Interactions', ascending=False)
-    
-    print("\n--- Analysis Complete ---")
-    return df_ideology_summary
-
-
-ECON_KEYWORDS: Set[str] = {
-    # Economics / macro
-    "economy","economic","economics","macro","micro","econometrics",
-    "growth","recession","inflation","deflation","stagflation","productivity",
-    "gdp","policy","monetary","fiscal","budget","tax","taxation","debt",
-    "deficit","surplus","inequality","poverty","development","sustainability",
-    # Finance & markets
-    "finance","financial","bank","banking","credit","loan","interest",
-    "investment","investing","investor","dividend","equity","capital",
-    "bond","bonds","securities","market","markets","stock","stocks",
-    "index","indices","fund","funds","etf","hedge","portfolio","trading",
-    "broker","exchange","nyse","nasdaq","wallstreet","dowjones","dow","sp500",
-    "forex","currency","currencies","money","wealth","cryptocurrency",
-    "crypto","bitcoin","ethereum","blockchain","token","nft",
-    # Commodities / energy / business / trade
-    "commodity","commodities","oil","petrol","gas","naturalgas","energy",
-    "coal","uranium","electricity","power","renewable","solar","wind",
-    "hydrogen","gold","silver","platinum","palladium","copper","iron",
-    "steel","aluminium","nickel","zinc","lead","lithium","cobalt","rareearth",
-    "grain","wheat","corn","soybean","rice","coffee","sugar","cotton",
-    "timber","water","mining","agriculture","agricultural",
-    "industry","industries","manufacturing","commerce","business",
-    "entrepreneur","entrepreneurship","startup","venture","innovation",
-    "supply","demand","trade","export","import","globalization","logistics",
-    "transport","shipping",
-    # Institutions / policy
-    "centralbank","ecb","fed","imf","worldbank","oecd","wto","regulation",
-    "governance","public","reform","subsidy","aid","stimulus","bailout",
-    "spending","taxpayer","treasury"
-}
-
-MACRO_TOPICS: Dict[str, List[str]] = {
-    "Economics": [
-        "economy","economic","economics","macro","micro","econometrics",
-        "growth","recession","inflation","deflation","stagflation","productivity",
-        "gdp","policy","monetary","fiscal","budget","tax","taxation","debt",
-        "deficit","surplus","inequality","poverty","development","sustainability"
-    ],
-    "Finance and Markets": [
-        "finance","financial","bank","banking","credit","loan","interest",
-        "investment","investing","investor","dividend","equity","capital",
-        "bond","bonds","securities","market","markets","stock","stocks",
-        "index","indices","fund","funds","etf","hedge","portfolio","trading",
-        "broker","exchange","nyse","nasdaq","wallstreet","dowjones","dow","sp500",
-        "forex","currency","currencies","money","wealth","cryptocurrency",
-        "crypto","bitcoin","ethereum","blockchain","token","nft"
-    ],
-    "Commodities": [
-        "commodity","commodities","gold","silver","platinum","palladium",
-        "copper","iron","steel","aluminium","nickel","zinc","lead","lithium",
-        "cobalt","rareearth","grain","wheat","corn","soybean","rice","coffee",
-        "sugar","cotton","timber","water","mining","agriculture","agricultural"
-    ],
-    "Energy": [
-        "oil","petrol","gas","naturalgas","energy","coal","uranium","electricity",
-        "power","renewable","solar","wind","hydrogen"
-    ],
-    "Businesses": [
-        "industry","industries","manufacturing","commerce","business",
-        "entrepreneur","entrepreneurship","startup","venture","innovation",
-        "supply","demand","trade","export","import","globalization","logistics",
-        "transport","shipping"
-    ],
-    "Institutions / Policies": [
-        "centralbank","ecb","fed","imf","worldbank","oecd","wto","regulation",
-        "governance","public","reform","subsidy","aid","stimulus","bailout",
-        "spending","taxpayer","treasury"
-    ]
-}
-
-def normalize(s: str) -> str:
-    """Lowercase + sostituisce non-alfanumerici con spazio."""
-    if not isinstance(s, str):
-        return ""
-    return "".join(ch.lower() if ch.isalnum() else " " for ch in s).strip()
-
-def normalize_series(ser: pd.Series) -> pd.Series:
-    return ser.astype(str).str.lower().str.strip()
-
-
-_WORD_PATS = [re.compile(rf"\b{re.escape(kw)}\b") for kw in sorted(ECON_KEYWORDS)]
-
-def contains_econ_word(text: str) -> bool:
-    """True se la stringa contiene almeno una keyword economica."""
-    if not isinstance(text, str) or not text:
-        return False
-    s = normalize(text)
-    for pat in _WORD_PATS:
-        if pat.search(s):
-            return True
-    return any(kw in s for kw in ECON_KEYWORDS)
-
-
-def classify_topic(name: str) -> str:
-    """Ritorna il macro-topic (o 'Other / unclassified')."""
-    s = normalize(name)
-    for topic, kws in MACRO_TOPICS.items():
-        for kw in kws:
-            if re.search(rf"\b{re.escape(kw)}\b", s) or kw in s:
-                return topic
-    return "Other / unclassified"
-
-
-def read_any(path: str | Path) -> pd.DataFrame:
-    p = Path(path)
-    if p.suffix.lower() in (".xlsx", ".xls"):
-        return pd.read_excel(p)
-    return pd.read_csv(p)
-
-def save_csv(df: pd.DataFrame, path: str | Path) -> None:
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(path, index=False)
-
-def build_economic_links_with_geo_labeled(
-    edges: pd.DataFrame,
-    geo_df: pd.DataFrame,
-    filter_economic: bool = True,
-    drop_duplicates: bool = True
-) -> pd.DataFrame:
-    """
-    - Normalizza nomi subreddit
-    - (opz) filtra edges 'economici' (almeno una estremità matcha keyword)
-    - Seleziona edges con almeno un estremo in geo_df['subreddit']
-    - Aggiunge SOURCE_CATEGORY / TARGET_CATEGORY
-    - Ritorna DF finale
-    """
-    req = {"SOURCE_SUBREDDIT","TARGET_SUBREDDIT"}
-    missing = req - set(edges.columns)
-    if missing:
-        raise KeyError(f"Mancano colonne {missing}. Trovate: {edges.columns.tolist()}")
-
-    if "subreddit" not in geo_df.columns:
-        raise KeyError("Attesa colonna 'subreddit' in geo_df")
-
-    edges = edges.copy()
-    edges["SOURCE_SUBREDDIT"] = normalize_series(edges["SOURCE_SUBREDDIT"])
-    edges["TARGET_SUBREDDIT"] = normalize_series(edges["TARGET_SUBREDDIT"])
-
-    geo_set = set(normalize_series(geo_df["subreddit"]))
-
-    if filter_economic:
-        mask_econ = (
-            edges["SOURCE_SUBREDDIT"].apply(contains_econ_word) |
-            edges["TARGET_SUBREDDIT"].apply(contains_econ_word)
-        )
-        edges = edges[mask_econ]
-
-    mask_geo = (
-        edges["SOURCE_SUBREDDIT"].isin(geo_set) |
-        edges["TARGET_SUBREDDIT"].isin(geo_set)
-    )
-    edges = edges[mask_geo]
-
-    if drop_duplicates:
-        edges = edges.drop_duplicates(subset=["SOURCE_SUBREDDIT","TARGET_SUBREDDIT"])
-
-    edges["SOURCE_CATEGORY"] = edges["SOURCE_SUBREDDIT"].apply(classify_topic)
-    edges["TARGET_CATEGORY"] = edges["TARGET_SUBREDDIT"].apply(classify_topic)
-    return edges
-
-

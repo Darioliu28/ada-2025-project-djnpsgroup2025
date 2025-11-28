@@ -612,7 +612,7 @@ def filter_countries(origin_folder, final_folder):
         "LIWC_Assent", "LIWC_Dissent", "LIWC_Nonflu", "LIWC_Filler"]
 
     df_country = df_country[new_order]
-    # Salva il DataFrame in un file CSV
+
     df_country.to_csv(final_folder+"df_country_expanded.csv", index=False)
     df_matches_list = pd.DataFrame(matches.items(), columns=['Subreddit', 'Country'])
     df_matches_list.to_csv(final_folder+'country_matches_map_expanded.csv', index=False)

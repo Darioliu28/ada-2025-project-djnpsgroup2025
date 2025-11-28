@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
 import numpy as np 
+import pycountry
 
 # Set default renderer for notebooks
 pio.renderers.default = "vscode" 
@@ -100,12 +101,6 @@ def plot_faction_world_map(factions_df, title="World Map Colored by Reddit Facti
     Generates an interactive Plotly choropleth map of country factions.
     Requires the 'pycountry' library to be installed.
     """
-    try:
-        import pycountry
-    except ImportError:
-        print("Error: 'pycountry' library not found. Please install it to use this function:")
-        print("pip install pycountry")
-        return
 
     def get_iso_alpha_3(country_name):
         """Helper to find ISO 3166-1 alpha-3 code for a country name."""
