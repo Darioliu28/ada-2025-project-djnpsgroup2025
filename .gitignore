@@ -6,5 +6,7 @@ data/web-redditEmbeddings-subreddits.csv
 src/__pycache__/
 src/.ipyng_checkpoints/
 .ipyng_checkpoints/
-
 .DS_Store
+**/.DS_Store
+__pycache__/
+*.pyc
