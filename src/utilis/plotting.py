@@ -10,6 +10,66 @@ import pycountry
 # Set default renderer for notebooks
 pio.renderers.default = "vscode" 
 
+# -- Functions for sentiment analysis
+
+def plot_top_5_subreddits(avg_props_by_subreddit, target_metrics):
+    fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(16, 9))
+    axes = axes.flatten()  
+
+    chart_colors = ['#FF9999', '#66B2FF', '#99FF99', '#FFCC99', '#c2c2f0', '#ffb3e6']
+
+    for i, col in enumerate(target_metrics):
+        ax = axes[i]
+        
+        top_5 = (avg_props_by_subreddit[col].sort_values(ascending=True) .tail(5))  
+        current_color = chart_colors[i % len(chart_colors)]                  
+            
+        top_5.plot(kind='barh', ax=ax, color=current_color, edgecolor='black', width=0.7)
+            
+        ax.set_title(col.replace('LIWC_', ''), fontsize=12, fontweight='bold')
+        ax.set_xlabel('Average Value')
+        ax.set_ylabel('') 
+        ax.grid(axis='x', linestyle='--', alpha=0.5)
+
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_countries_by_metric(avg_props_by_country, metric):
+
+    plot_df = (
+        avg_props_by_country[[metric]]
+        .sort_values(by=metric, ascending=True) 
+        .reset_index()
+    )
+
+    fig = px.bar(
+        plot_df,
+        x=metric,
+        y="source_country",
+        orientation='h', 
+        title="Average Religion Sentiment by Country",
+        text_auto='.3f', 
+        color=metric,    
+        color_continuous_scale='Viridis', 
+        height=800       
+    )
+
+    fig.update_layout(
+        xaxis_title="Average Sentiment Score",
+        yaxis_title="Country",
+        yaxis=dict(
+        dtick=1,         
+        automargin=True   
+        ),
+        height=1200,          
+        margin=dict(l=150),    
+        showlegend=False
+    )
+
+    fig.show()
+
+
 # -- Functions for cluster with embedding analysis --
 
 def plot_kmeans_elbow(elbow_df):

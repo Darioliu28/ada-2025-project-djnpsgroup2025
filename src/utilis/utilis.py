@@ -13,9 +13,6 @@ from tqdm import tqdm
 from scipy.stats import ttest_ind, mannwhitneyu
 import matplotlib.pyplot as plt
 import seaborn as sns
-import re
-from pathlib import Path
-from typing import Iterable, List, Dict, Set
 
 post_props_cols = [
     "num_chars", "num_chars_no_space", "frac_alpha", "frac_digits",

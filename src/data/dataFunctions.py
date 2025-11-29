@@ -1,6 +1,4 @@
-# data_processing.py
 import pandas as pd
-from thefuzz import fuzz, process
 
 def load_country_subreddits(country_file):
     """
@@ -87,7 +85,6 @@ def load_post_data(title_file, body_file):
 
     return df_combined
 
-
 def filter_posts_by_country(df_combined, df_country):
     """
     Filters the main posts DataFrame based on the approved country list,
@@ -145,7 +142,6 @@ def filter_posts_by_country(df_combined, df_country):
     
     print("Post processing complete.")
     return df_post_with_1_country, df_post_between_countries
-
 
 def filter_embeddings_by_country(df_embeddings, df_countries):
     """
