@@ -8,6 +8,8 @@ import numpy as np
 import pycountry
 import holoviews as hv
 from holoviews import opts
+import plotly.graph_objects as go
+import plotly.colors as pc
 
 # Set default renderer for notebooks
 pio.renderers.default = "vscode" 
@@ -37,7 +39,7 @@ def plot_top_5_subreddits(avg_props_by_subreddit, target_metrics):
     plt.tight_layout()
     plt.show()
 
-def plot_countries_by_metric(avg_props_by_country, metric):
+def plot_countries_by_metric(avg_props_by_country, metric, title):
 
     plot_df = (
         avg_props_by_country[[metric]]
@@ -50,7 +52,7 @@ def plot_countries_by_metric(avg_props_by_country, metric):
         x=metric,
         y="source_country",
         orientation='h', 
-        title="Average Religion Sentiment by Country",
+        title=title,
         text_auto='.3f', 
         color=metric,    
         color_continuous_scale='Viridis', 
@@ -76,35 +78,27 @@ def plot_countries_by_metric(avg_props_by_country, metric):
 def chord_plot(df_final):
     hv.extension('bokeh')
 
-    # 1. Setup Data (Top 50 to prevent overlapping text)
-    # We use the Log-Normalized data we created earlier
     top_interactions = df_final.head(50).copy()
     chord_data = top_interactions[['Country_A', 'Country_B', 'norm_log']]
     chord_data.columns = ['source', 'target', 'value']
 
-    # 2. Create the Chord Object
     chord = hv.Chord(chord_data)
 
-    # 3. Apply Styling with Labels
-    # labels='index' tells it to use the country name as the label
+
     viz = chord.opts(
         opts.Chord(
-            # --- Labels ---
-            labels='index',           # <--- THIS enables the names
+            labels='index',           
             label_text_font_size='10pt',
             label_text_color='black',
             
-            # --- Colors & Ribbons ---
-            cmap='Category20',        # Palette for the countries (nodes)
-            edge_cmap='Category20',   # Palette for the ribbons
-            edge_color='source',      # Ribbon matches the source country color
-            node_color='index',       # Arc matches the country color
+            cmap='Category20',        
+            edge_cmap='Category20',  
+            edge_color='source',      
+            node_color='index',       
             
-            # --- Interaction ---
             edge_hover_line_color='black',
             node_hover_fill_color='red',
             
-            # --- Layout ---
             width=750, 
             height=750,
             title="Inter-Country Digital Connections"
@@ -112,6 +106,7 @@ def chord_plot(df_final):
     )
 
     return viz
+
 # -- Functions for cluster with embedding analysis --
 
 def plot_kmeans_elbow(elbow_df):
@@ -121,7 +116,6 @@ def plot_kmeans_elbow(elbow_df):
     Args:
         elbow_df (pd.DataFrame): DataFrame from calculate_kmeans_elbow.
     """
-    print("Plotting K-Means elbow graph...")
     plt.figure(figsize=(10, 6))
     plt.plot(elbow_df['k'], elbow_df['inertia'], marker='o')
     plt.title('K-Means Elbow Plot')
@@ -129,33 +123,6 @@ def plot_kmeans_elbow(elbow_df):
     plt.ylabel('Inertia')
     plt.grid(True)
     plt.show()
-
-def plot_interactive_cluster_map(tsne_df):
-    """
-    Creates an interactive Plotly scatter plot of the t-SNE results.
-    
-    Args:
-        tsne_df (pd.DataFrame): The DataFrame from run_clustering_and_tsne.
-    """
-    print("Generating interactive cluster map...")
-    
-    fig = px.scatter(
-        tsne_df,
-        x='tsne_x',
-        y='tsne_y',
-        color='cluster',
-        hover_name='subreddit',
-        title=f"t-SNE Visualization of {len(tsne_df)} Subreddit Clusters",
-        template='plotly_dark'
-    )
-    
-    fig.update_traces(marker=dict(size=5, opacity=0.8))
-    fig.update_layout(
-        xaxis=dict(title='t-SNE Component 1', showticklabels=False),
-        yaxis=dict(title='t-SNE Component 2', showticklabels=False),
-        legend_title_text='Cluster'
-    )
-    fig.show()
 
 def plot_labeled_cluster_map(tsne_df, label_map):
     """
@@ -167,13 +134,9 @@ def plot_labeled_cluster_map(tsne_df, label_map):
         label_map (dict): A dictionary mapping cluster IDs (as str) 
                           to new string labels (e.g., {'5': 'Sports'}).
     """
-    print("Generating labeled interactive cluster map...")
     
-    # Make a copy to avoid changing the original dataframe
     plot_df = tsne_df.copy()
     
-    # Map the new labels. Use .get() to avoid errors
-    # if a cluster is in the df but not the map
     plot_df['Topic'] = plot_df['cluster'].apply(
         lambda x: label_map.get(x, f"Cluster {x} (Unlabeled)")
     )
@@ -182,7 +145,7 @@ def plot_labeled_cluster_map(tsne_df, label_map):
         plot_df,
         x='tsne_x',
         y='tsne_y',
-        color='Topic',  # Color by the new 'Topic' column
+        color='Topic', 
         hover_name='subreddit',
         title="t-SNE Visualization of Subreddit Topics",
         template='plotly_dark'
@@ -198,7 +161,7 @@ def plot_labeled_cluster_map(tsne_df, label_map):
 
 # -- Functions for factions with positive posts analysis --
 
-def plot_faction_world_map(factions_df, title="World Map Colored by Reddit Factions"):
+def plot_faction_world_map(factions_df, title):
     """
     Generates an interactive Plotly choropleth map of country factions.
     Requires the 'pycountry' library to be installed.
@@ -227,19 +190,12 @@ def plot_faction_world_map(factions_df, title="World Map Colored by Reddit Facti
         except Exception:
             return None
 
-    print("Mapping country names to ISO codes...")
     plot_data = factions_df.copy()
     plot_data['iso_alpha'] = plot_data['country'].apply(get_iso_alpha_3)
-    
-    unmapped = plot_data[plot_data['iso_alpha'].isnull()]['country'].unique()
-    if len(unmapped) > 0:
-        print(f"Warning: Could not find ISO codes for {len(unmapped)} countries. They will not be plotted.")
-        print(unmapped)
     
     plot_data = plot_data.dropna(subset=['iso_alpha'])
     plot_data['faction_str'] = plot_data['faction'].astype(str) 
 
-    print("Generating Plotly map...")
     fig = px.choropleth(
         plot_data,
         locations="iso_alpha",
@@ -253,100 +209,211 @@ def plot_faction_world_map(factions_df, title="World Map Colored by Reddit Facti
     )
     fig.show()
 
-def plot_signed_network(mapped_posts_df, factions_df_norm, title="Signed Network of Country Interactions"):
+def plot_signed_network(mapped_posts_df, factions_df_norm, title):
     """
     Generates a detailed NetworkX graph plot based on the provided logic.
     - Nodes are colored by faction.
     - Edges are colored by net sentiment (Green=Positive, Red=Negative).
     - Edge width is log-scaled by total post volume.
     """
-    print("\nGenerating Signed Network Plot...")
-    try:
-        # --- Calculate Negative Links ---
-        df_negative_posts = mapped_posts_df[mapped_posts_df["LINK_SENTIMENT"] == -1].copy()
-        country_negative_links = (
+    df_negative_posts = mapped_posts_df[mapped_posts_df["LINK_SENTIMENT"] == -1].copy()
+    country_negative_links = (
             df_negative_posts.groupby(["source_country", "target_country"])
             .size()
             .reset_index(name="num_negative_posts")
         )
 
-        # --- Combine Positive and Negative Links ---
-        df_positive_posts = mapped_posts_df[mapped_posts_df["LINK_SENTIMENT"] == 1].copy()
-        country_positive_links_counts = (
+        
+    df_positive_posts = mapped_posts_df[mapped_posts_df["LINK_SENTIMENT"] == 1].copy()
+    country_positive_links_counts = (
             df_positive_posts.groupby(["source_country", "target_country"])
             .size()
             .reset_index(name="num_positive_posts")
         )
 
-        # Combine counts using source/target pairs
-        country_links_combined = pd.merge(
+    country_links_combined = pd.merge(
             country_positive_links_counts,
             country_negative_links,
             on=["source_country", "target_country"],
             how="outer"
         ).fillna(0)
 
-        # Aggregate interactions regardless of direction
-        country_links_combined['pair'] = country_links_combined.apply(lambda row: tuple(sorted((row['source_country'], row['target_country']))), axis=1)
-        signed_agg = country_links_combined.groupby('pair').agg(
+    country_links_combined['pair'] = country_links_combined.apply(lambda row: tuple(sorted((row['source_country'], row['target_country']))), axis=1)
+    signed_agg = country_links_combined.groupby('pair').agg(
             num_positive=('num_positive_posts', 'sum'),
             num_negative=('num_negative_posts', 'sum')
         ).reset_index()
-        signed_agg[['country1', 'country2']] = pd.DataFrame(signed_agg['pair'].tolist(), index=signed_agg.index)
+    signed_agg[['country1', 'country2']] = pd.DataFrame(signed_agg['pair'].tolist(), index=signed_agg.index)
 
-        signed_agg["net_sentiment_count"] = signed_agg["num_positive"] - signed_agg["num_negative"]
-        signed_agg["total_posts"] = signed_agg["num_positive"] + signed_agg["num_negative"]
+    signed_agg["net_sentiment_count"] = signed_agg["num_positive"] - signed_agg["num_negative"]
+    signed_agg["total_posts"] = signed_agg["num_positive"] + signed_agg["num_negative"]
 
-        signed_agg = signed_agg[(signed_agg["country1"] != signed_agg["country2"]) & (signed_agg["total_posts"] > 0)]
+    signed_agg = signed_agg[(signed_agg["country1"] != signed_agg["country2"]) & (signed_agg["total_posts"] > 0)]
 
-        # --- Build Signed Graph ---
-        G_signed = nx.Graph()
-        for _, row in signed_agg.iterrows():
-            c1, c2 = row['country1'], row['country2']
-            net_sentiment = row['net_sentiment_count']
-            total_posts = row['total_posts']
-            G_signed.add_edge(c1, c2, net_sentiment=net_sentiment, total_posts=total_posts)
+    G_signed = nx.Graph()
+    for _, row in signed_agg.iterrows():
+        c1, c2 = row['country1'], row['country2']
+        net_sentiment = row['net_sentiment_count']
+        total_posts = row['total_posts']
+        G_signed.add_edge(c1, c2, net_sentiment=net_sentiment, total_posts=total_posts)
 
-        # Remove isolated nodes (countries with no interactions)
-        G_signed.remove_nodes_from(list(nx.isolates(G_signed)))
-        if G_signed.number_of_nodes() == 0:
-            print("Graph is empty after processing. No plot generated.")
-            return
-
-        # --- Prepare for Plotting ---
-        edges = G_signed.edges(data=True)
-        edge_colors = ['green' if data['net_sentiment'] > 0 else 'red' if data['net_sentiment'] < 0 else 'grey' for u, v, data in edges]
-        edge_widths = [np.log1p(data['total_posts']) * 0.5 + 0.1 for u, v, data in edges]
-
-        # Node colors by faction
-        num_factions = factions_df_norm['faction'].nunique()
-        node_color_map = plt.get_cmap('tab20', max(20, num_factions)) # Ensure enough colors
-        country_to_faction = factions_df_norm.set_index('country')['faction'].to_dict()
-        # Assign a default color index (e.g., -1 maps to grey) for nodes not in a faction
-        node_colors = [node_color_map(country_to_faction.get(node, -1) % 20) if country_to_faction.get(node, -1) != -1 else 'lightgrey' for node in G_signed.nodes()]
+    G_signed.remove_nodes_from(list(nx.isolates(G_signed)))
 
 
-        # --- Plotting ---
-        fig_net, ax_net = plt.subplots(figsize=(20, 20)) # Increased size
-        pos = nx.spring_layout(G_signed, k=0.6, iterations=60, seed=42) # Adjusted layout parameters
+    edges = G_signed.edges(data=True)
+    edge_colors = ['green' if data['net_sentiment'] > 0 else 'red' if data['net_sentiment'] < 0 else 'grey' for u, v, data in edges]
+    edge_widths = [np.log1p(data['total_posts']) * 0.5 + 0.1 for u, v, data in edges]
 
-        nx.draw_networkx_nodes(G_signed, pos, node_size=60, node_color=node_colors, alpha=0.9, ax=ax_net)
-        nx.draw_networkx_edges(G_signed, pos, edge_color=edge_colors, width=edge_widths, alpha=0.3, ax=ax_net)
-        # Draw labels with slight adjustments
-        nx.draw_networkx_labels(G_signed, pos, font_size=9, font_weight='bold', ax=ax_net)
+    num_factions = factions_df_norm['faction'].nunique()
+    node_color_map = plt.get_cmap('tab20', max(20, num_factions)) 
+    country_to_faction = factions_df_norm.set_index('country')['faction'].to_dict()
+    node_colors = [node_color_map(country_to_faction.get(node, -1) % 20) if country_to_faction.get(node, -1) != -1 else 'lightgrey' for node in G_signed.nodes()]
 
-        ax_net.set_title("Signed Network of Country Interactions (Green=Positive, Red=Negative Net Sentiment)", fontsize=16)
-        ax_net.set_axis_off()
-        plt.tight_layout()
-        # plt.savefig("signed_network_plot.png", dpi=300) # Higher resolution save
-        print("Signed Network Plot saved as signed_network_plot.png")
-        plt.show() # Display the plot directly
-        plt.close(fig_net)
 
-    except ImportError:
-        print("Could not generate signed network plot: NetworkX or Matplotlib might not be installed correctly.")
-        print("Try: pip install networkx matplotlib")
-    except Exception as e:
-        print(f"An error occurred in plot_signed_network: {e}")
-        import traceback
-        traceback.print_exc()
+    fig_net, ax_net = plt.subplots(figsize=(16, 10)) 
+    pos = nx.spring_layout(G_signed, k=0.6, iterations=60, seed=42) 
+
+    nx.draw_networkx_nodes(G_signed, pos, node_size=60, node_color=node_colors, alpha=0.9, ax=ax_net)
+    nx.draw_networkx_edges(G_signed, pos, edge_color=edge_colors, width=edge_widths, alpha=0.3, ax=ax_net)
+    nx.draw_networkx_labels(G_signed, pos, font_size=9, font_weight='bold', ax=ax_net)
+
+    ax_net.set_title(title, fontsize=16)
+    ax_net.set_axis_off()
+    plt.tight_layout()
+    plt.show() 
+    plt.close(fig_net)
+
+def plot_faction_evolution(y_factions_norm_df):
+    
+    df_factions = y_factions_norm_df.explode('countries').reset_index(drop=True)
+
+    df_factions = df_factions.rename(columns={'countries': 'source_country'})
+
+    df_factions = df_factions[['year', 'faction', 'source_country']]
+
+    quarters = sorted(df_factions['year'].unique())
+
+    palette = pc.qualitative.Plotly 
+    
+    all_nodes = []
+    node_indices = {}
+    node_colors = [] 
+    
+    for q in quarters:
+        q_data = df_factions[df_factions['year'] == q]
+        factions = sorted(q_data['faction'].unique())
+        
+        for f in factions:
+            node_id = f"{str(q)} - Faction {f}"
+            
+            if node_id not in node_indices:
+                node_indices[node_id] = len(all_nodes)
+                all_nodes.append(node_id)
+                
+                f_int = int(f) 
+                
+                specific_color = palette[f_int % len(palette)]
+                node_colors.append(specific_color)
+
+    sources = []
+    targets = []
+    values = []
+    link_colors = [] 
+    
+    for i in range(len(quarters) - 1):
+        q_current = quarters[i]
+        q_next = quarters[i+1]
+        
+        df_curr = df_factions[df_factions['year'] == q_current]
+        df_next = df_factions[df_factions['year'] == q_next]
+        
+        transitions = pd.merge(
+            df_curr[['source_country', 'faction']], 
+            df_next[['source_country', 'faction']], 
+            on='source_country', 
+            suffixes=('_curr', '_next')
+        )
+        
+        flow_counts = (
+            transitions.groupby(['faction_curr', 'faction_next'])
+            .size()
+            .reset_index(name='count')
+        )
+        
+        for _, row in flow_counts.iterrows():
+            src_node = f"{str(q_current)} - Faction {row['faction_curr']}"
+            tgt_node = f"{str(q_next)} - Faction {row['faction_next']}"
+            
+            sources.append(node_indices[src_node])
+            targets.append(node_indices[tgt_node])
+            values.append(row['count'])
+            
+
+            f_id = int(row['faction_curr']) if str(row['faction_curr']).isdigit() else abs(hash(row['faction_curr']))
+            base_color = palette[f_id % len(palette)]
+            
+            if base_color.startswith('#'):
+                h = base_color.lstrip('#')
+                rgb = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+                link_colors.append(f'rgba({rgb[0]}, {rgb[1]}, {rgb[2]}, 0.3)')
+            else:
+                link_colors.append('rgba(150, 150, 150, 0.2)') 
+
+    fig = go.Figure(data=[go.Sankey(
+        node=dict(
+            pad=15,
+            thickness=20,
+            line=dict(color="black", width=0.5),
+            label=all_nodes,
+            color=node_colors 
+        ),
+        link=dict(
+            source=sources,
+            target=targets,
+            value=values,
+            color=link_colors 
+        )
+    )])
+
+    fig.update_layout(
+        title_text="Evolution of Factions over time",
+        font_size=10,
+        height=800
+    )
+    
+    fig.show()
+
+def heatmap_co_occurrence(target_countries, q_factions_norm_df):
+
+    pair_counts = {}
+
+    for c1 in target_countries:
+        for c2 in target_countries:
+            pair_counts[(c1, c2)] = 0
+
+    for _, row in q_factions_norm_df.iterrows():
+
+        members = [c for c in row['countries'] if c in target_countries]
+        
+        for i in range(len(members)):
+            for j in range(len(members)):
+                pair_counts[(members[i], members[j])] += 1
+
+    matrix_data = []
+    for c1 in target_countries:
+        row_data = []
+        for c2 in target_countries:
+            row_data.append(pair_counts[(c1, c2)])
+        matrix_data.append(row_data)
+
+    df_heatmap = pd.DataFrame(matrix_data, index=target_countries, columns=target_countries)
+
+    fig = px.imshow(
+        df_heatmap, 
+        width=1000, height=1000,
+        title="Alliance Stability: How often are countries in the same faction?",
+        color_continuous_scale='Viridis'
+    )
+    fig.show()
+
+

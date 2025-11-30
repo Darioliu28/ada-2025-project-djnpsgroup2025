@@ -36,7 +36,7 @@ post_props_cols = [
     "LIWC_Leisure", "LIWC_Home", "LIWC_Money", "LIWC_Relig", "LIWC_Death",
     "LIWC_Assent", "LIWC_Dissent", "LIWC_Nonflu", "LIWC_Filler"
     ]
-# === 1. CLUSTERS WITH EMBEDDING ANALYSIS ===
+# === CLUSTERS WITH EMBEDDING ANALYSIS ===
 
 def prepare_embeddings_for_clustering(df_emb):
     """
@@ -49,20 +49,13 @@ def prepare_embeddings_for_clustering(df_emb):
     Returns:
         tuple: (scaled_features, subreddit_labels)
     """
-    print("Preparing embeddings for clustering...")
-    
-    # 1. Separate labels and features
-    if 'subreddit' not in df_emb.columns:
-        print("Renaming column 0 to 'subreddit'.")
-        df_emb = df_emb.rename(columns={0: 'subreddit'})
-        
+    # Separates    
     subreddit_labels = df_emb['subreddit'].values
-    # Get all columns that are not 'subreddit'
+
     feature_cols = [col for col in df_emb.columns if col != 'subreddit']
     features = df_emb[feature_cols].values
     
-    # 2. Scale features
-    print("Scaling features using StandardScaler...")
+    # Scale features
     scaler = StandardScaler()
     scaled_features = scaler.fit_transform(features)
     
@@ -72,7 +65,6 @@ def prepare_embeddings_for_clustering(df_emb):
 def calculate_kmeans_elbow_wide(scaled_data, k_values_list, n_samples=5000):
     """
     Calculates the K-Means "inertia" for a specific list of k values.
-    This is for testing a wide, sparse range (e.g., 20, 50, 100, 200).
     
     Uses a random sample of the data for speed.
     
@@ -84,8 +76,7 @@ def calculate_kmeans_elbow_wide(scaled_data, k_values_list, n_samples=5000):
     Returns:
         pd.DataFrame: A DataFrame with 'k' and 'inertia'.
     """
-    print(f"Calculating K-Means elbow (wide range)... (using a sample of {n_samples} items)")
-    
+
     # Subsample the data for speed
     if len(scaled_data) > n_samples:
         indices = np.random.choice(scaled_data.shape[0], n_samples, replace=False)
@@ -102,7 +93,6 @@ def calculate_kmeans_elbow_wide(scaled_data, k_values_list, n_samples=5000):
         inertia.append(kmeans.inertia_)
         
     elbow_df = pd.DataFrame({'k': k_values_list, 'inertia': inertia})
-    print("Wide-range elbow calculations complete.")
     return elbow_df
 
 def run_clustering_and_tsne(scaled_data, subreddit_labels, n_clusters, 
@@ -127,14 +117,11 @@ def run_clustering_and_tsne(scaled_data, subreddit_labels, n_clusters,
             - tsne_df_filtered: DataFrame for plotting (sampled, 2D)
             - all_cluster_labels: Full array of cluster IDs for all 51k+ items
     """
-    # --- 1. Final K-Means Clustering ---
-    print(f"Running final K-Means clustering with k={n_clusters} on {len(scaled_data)} items...")
+    print(f"Running K-Means clustering with k={n_clusters} on {len(scaled_data)} items...")
     kmeans = KMeans(n_clusters=n_clusters, n_init=10, random_state=42)
     
     all_cluster_labels = kmeans.fit_predict(scaled_data)
-    print("K-Means complete.")
 
-    # --- 2. Filter Clusters by Size ---
     print(f"Finding valid clusters with > {min_cluster_size} members...")
     cluster_labels_unique, cluster_counts = np.unique(all_cluster_labels, return_counts=True)
     valid_cluster_labels = cluster_labels_unique[cluster_counts > min_cluster_size]
@@ -148,7 +135,6 @@ def run_clustering_and_tsne(scaled_data, subreddit_labels, n_clusters,
         print("No clusters met the size criteria. Try a lower `min_cluster_size`.")
         return pd.DataFrame(columns=['subreddit', 'cluster', 'tsne_x', 'tsne_y']), all_cluster_labels
 
-    # --- 3. t-SNE Dimensionality Reduction ---
     n_tsne_samples = 15000 
     if len(scaled_data) > n_tsne_samples:
         print(f"Running t-SNE with perplexity={perplexity}... (sampling {n_tsne_samples} items)")
@@ -167,8 +153,6 @@ def run_clustering_and_tsne(scaled_data, subreddit_labels, n_clusters,
     tsne_results = tsne.fit_transform(data_sample)
     print("t-SNE complete.")
 
-    # --- 4. Combine and Filter Results ---
-    print("Combining and filtering t-SNE results...")
     tsne_df = pd.DataFrame({
         'subreddit': label_sample,
         'cluster': cluster_sample,
@@ -178,9 +162,7 @@ def run_clustering_and_tsne(scaled_data, subreddit_labels, n_clusters,
     
     tsne_df_filtered = tsne_df[tsne_df['cluster'].isin(valid_clusters_set)].copy()
     tsne_df_filtered['cluster'] = tsne_df_filtered['cluster'].astype(str)
-    
-    print(f"Returning {len(tsne_df_filtered)} items (from the sample) that belong to the {n_valid} valid clusters.")
-    
+        
     return tsne_df_filtered, all_cluster_labels
 
 def get_cluster_samples(subreddit_labels, all_cluster_labels, n_samples=10):
@@ -197,7 +179,6 @@ def get_cluster_samples(subreddit_labels, all_cluster_labels, n_samples=10):
         dict: A dictionary where keys are cluster IDs and values are
               lists of sample subreddit names.
     """
-    print("Getting samples from each cluster...")
     df = pd.DataFrame({
         'subreddit': subreddit_labels,
         'cluster': all_cluster_labels
@@ -205,7 +186,6 @@ def get_cluster_samples(subreddit_labels, all_cluster_labels, n_samples=10):
     
     cluster_samples = {}
     
-    # Group by the cluster ID
     for cluster_id, group in df.groupby('cluster'):
         
         # Get a random sample, or all of them if the group is too small
@@ -216,10 +196,10 @@ def get_cluster_samples(subreddit_labels, all_cluster_labels, n_samples=10):
             
         cluster_samples[cluster_id] = sample['subreddit'].tolist()
         
-    print(f"Returning samples for {len(cluster_samples)} total clusters.")
     return cluster_samples
 
-# === 2. COUNTRY INTERACTION ANALYSIS
+
+# === COUNTRY INTERACTION ANALYSIS
 
 def calculate_normalized_interactions(country_post_counts, df_post_between_countries):
     total_posts_map = country_post_counts.to_dict()
@@ -257,8 +237,7 @@ def calculate_normalized_interactions(country_post_counts, df_post_between_count
     return df_final
 
 
-
-# === 2. EMBEDDING-FACTION ANALYSIS ===
+# === EMBEDDING-FACTION ANALYSIS ===
 
 def find_strict_subreddits(df_countries, df_embeddings):
     """
@@ -298,8 +277,8 @@ def find_strict_subreddits(df_countries, df_embeddings):
 
 def find_closest_dissimilar_subreddits(df_strict_approved, df_embeddings):
     """
-    Finds the *most similar* (highest cosine similarity) subreddit 
-    from a *different* country for each strict subreddit.
+    Finds the most similar (highest cosine similarity) subreddit 
+    from a different country for each strict subreddit.
     """
     strict_subs_set = set(df_strict_approved["subreddit"])
     df_emb_strict = df_embeddings[df_embeddings["subreddit"].isin(strict_subs_set)].reset_index(drop=True)
@@ -321,7 +300,6 @@ def find_closest_dissimilar_subreddits(df_strict_approved, df_embeddings):
         # Mask out subreddits from the same country
         for j, other_sub in enumerate(subreddit_names):
             if sub_to_country.get(other_sub) == sub_to_country.get(sub) or i == j:
-                # Set to a very low number so argmax won't pick it
                 similarities[j] = -np.inf 
         
         closest_idx = similarities.argmax()
@@ -338,7 +316,7 @@ def find_closest_dissimilar_subreddits(df_strict_approved, df_embeddings):
     return pd.DataFrame(most_similar_subreddits)
 
 
-# === 3. NETWORK-BASED FACTION ANALYSIS WITH POSITIVE POSTS ===
+# === NETWORK-BASED FACTION ANALYSIS WITH POSITIVE POSTS ===
 
 def _map_countries(df_posts, df_countries):
     """Helper to map source/target subreddits to countries."""
@@ -380,105 +358,10 @@ def detect_factions(graph):
     
     return factions_summary, factions_df
 
-def diagnose_unfactioned_countries(df_countries, factions_df, df_post_with_1_country):
-    """
-    Finds countries that were approved but did not end up in a faction,
-    and provides a reason why.
-
-    Args:
-        df_approved (pd.DataFrame): DataFrame of approved subreddits and countries.
-        factions_df (pd.DataFrame): DataFrame of countries and their assigned faction.
-        df_post_with_1_country (pd.DataFrame): DataFrame of all posts with at least
-                                               one approved subreddit.
-
-    Returns:
-        pd.DataFrame: A summary of missing countries and the reason they are missing.
-    """
-    print("Diagnosing unfactioned countries...")
-
-    # --- 1. Map countries to all posts ---
-    # This is needed for all subsequent logic
-    print("Mapping countries to post data...")
-    sub_to_country = df_countries.drop_duplicates(subset='subreddit').set_index("subreddit")["country"].to_dict()
-    
-    # Create a mapped copy of the posts DataFrame
-    df_posts_mapped = df_post_with_1_country.copy()
-    df_posts_mapped['source_country'] = df_posts_mapped['SOURCE_SUBREDDIT'].map(sub_to_country)
-    df_posts_mapped['target_country'] = df_posts_mapped['TARGET_SUBREDDIT'].map(sub_to_country)
-    
-    # --- 2. Create helper DataFrames ---
-    df_positive_posts = df_posts_mapped[df_posts_mapped["LINK_SENTIMENT"] == 1].copy()
-    df_negative_posts = df_posts_mapped[df_posts_mapped["LINK_SENTIMENT"] == -1].copy()
-
-    # --- 3. Identify country sets ---
-    all_countries = set(df_countries["country"].dropna().unique())
-    countries_in_factions = set(factions_df["country"].unique())
-    countries_not_in_faction = sorted(all_countries - countries_in_factions)
-
-    print(f"Total approved countries: {len(all_countries)}")
-    print(f"Countries in factions: {len(countries_in_factions)}")
-    print(f"Countries to diagnose: {len(countries_not_in_faction)}")
-
-    # --- 4. Diagnose why they are missing ---
-    reasons = defaultdict(list)
-    
-    # Create a set of country subreddits for faster filtering
-    country_subreddit_map = df_countries.groupby('country')['subreddit'].apply(set).to_dict()
-
-    for country in countries_not_in_faction:
-        
-        country_subs = country_subreddit_map.get(country, set())
-        if not country_subs:
-            reasons[country].append("no subreddits found in df_approved")
-            continue
-
-        # (a) Check total posts (any sentiment)
-        # Note: We use the *original* df_post_with_1_country for this check
-        total_posts_df = df_post_with_1_country[
-            df_post_with_1_country["SOURCE_SUBREDDIT"].isin(country_subs) |
-            df_post_with_1_country["TARGET_SUBREDDIT"].isin(country_subs)
-        ]
-        if total_posts_df.empty:
-            reasons[country].append("no posts at all")
-            continue
-
-        # (b) Check for positive posts with *other* countries
-        # We use the pre-filtered df_positive_posts for this
-        pos_links = df_positive_posts[
-            ((df_positive_posts["source_country"] == country) & (df_positive_posts["target_country"] != country)) |
-            ((df_positive_posts["target_country"] == country) & (df_positive_posts["source_country"] != country))
-        ]
-        
-        if pos_links.empty:
-            # (c) Check for negative posts
-            neg_links = df_negative_posts[
-                (df_negative_posts["source_country"] == country) |
-                (df_negative_posts["target_country"] == country)
-            ]
-            if not neg_links.empty:
-                reasons[country].append("only negative or self-posts (no positive links to others)")
-            else:
-                reasons[country].append("only neutral or self-posts (no positive/negative links to others)")
-        else:
-            reasons[country].append("had positive posts but was isolated (not linked strongly enough to form faction)")
-
-    # --- 5. Combine results in a summary dataframe ---
-    if not reasons:
-        print("No missing countries found.")
-        return pd.DataFrame(columns=["country", "reason"])
-
-    missing_countries_summary = pd.DataFrame([
-        {"country": c, "reason": ", ".join(r)}
-        for c, r in reasons.items()
-    ]).sort_values("country").reset_index(drop=True)
-
-    print("Diagnosis complete.")
-    return missing_countries_summary
-
 def detect_normalized_factions(df_post_between_countries):
     """
     Detects factions based on normalized positive interaction weights.
-    Weight = N_posts(A,B) / sqrt(TotalPosts(A) * TotalPosts(B))
+    Weight = N_posts(A,B) / (TotalPosts(A) * TotalPosts(B))
     """
     df_positive = df_post_between_countries[df_post_between_countries["LINK_SENTIMENT"] == 1].copy()
     
@@ -504,28 +387,28 @@ def detect_normalized_factions(df_post_between_countries):
     )
     
     country_links["normalized_weight"] = country_links["num_positive_posts"] / \
-                                         np.sqrt(country_links["source_total"] * country_links["target_total"])
+                                         (country_links["source_total"] * country_links["target_total"])
 
     G_norm = build_interaction_graph(country_links, weight_col="normalized_weight")
     return detect_factions(G_norm)
 
 
-# === 4. TEMPORAL & ACTIVITY ANALYSIS ===
+# === TEMPORAL & ACTIVITY ANALYSIS ===
 
-def map_countries_to_posts(df_posts, df_countries):
+def map_countries_to_posts(df_posts, df_countries, period):
     """Helper to map source/target subreddits to countries."""
     df_links_with_countries = _map_countries(df_posts.copy(), df_countries)
     df_links_with_countries["TIMESTAMP"] = pd.to_datetime(df_links_with_countries["TIMESTAMP"], errors='coerce')
-    df_links_with_countries["year_quarter"] = df_links_with_countries["TIMESTAMP"].dt.to_period("Q")
-    return df_links_with_countries.dropna(subset=['year_quarter'])
+    df_links_with_countries["year"] = df_links_with_countries["TIMESTAMP"].dt.to_period(period)
+    return df_links_with_countries.dropna(subset=['year'])
 
 def analyze_source_normalized_factions_over_time(df_post_between_countries):
     """
     Calculates factions for each quarter, normalizing by source country post count.
     """
-    quarterly_summary = []
+    timely_summary = []
     
-    for period, group in df_post_between_countries.groupby("year_quarter"):
+    for period, group in df_post_between_countries.groupby("year"):
         country_total_posts = group.groupby("source_country").size().reset_index(name="total_posts")
         
         group = group.merge(country_total_posts, on="source_country", how="left")
@@ -546,17 +429,17 @@ def analyze_source_normalized_factions_over_time(df_post_between_countries):
             continue
             
         summary, _ = detect_factions(G_quarter)
-        summary["year_quarter"] = str(period)
-        quarterly_summary.append(summary)
+        summary["year"] = str(period)
+        timely_summary.append(summary)
         
-    return pd.concat(quarterly_summary).reset_index(drop=True)
+    return pd.concat(timely_summary).reset_index(drop=True)
 
 def find_stable_pairs(quarterly_factions_summary_df):
     """Finds pairs of countries that frequently appear in the same faction."""
     pair_counter = Counter()
-    total_quarters = quarterly_factions_summary_df["year_quarter"].nunique()
+    total_quarters = quarterly_factions_summary_df["year"].nunique()
     
-    for _, quarter_group in quarterly_factions_summary_df.groupby("year_quarter"):
+    for _, quarter_group in quarterly_factions_summary_df.groupby("year"):
         for _, row in quarter_group.iterrows():
             countries = row["countries"]
             for pair in itertools.combinations(sorted(countries), 2):
@@ -598,75 +481,8 @@ def calculate_loyalty_scores(quarterly_factions_summary_df):
     loyalty_df = pd.DataFrame(loyalty_list)
     return loyalty_df[loyalty_df["loyalty_score"] < 1].sort_values("loyalty_score", ascending=False).reset_index(drop=True)
 
-def find_switch_triggers(quarterly_factions_summary_df, df_post_between_countries):
-    """
-    Analyzes if negative posts in a *previous* quarter correlate with
-    a faction switch in the *current* quarter.
-    """
-    df_neg = df_post_between_countries[df_post_between_countries["LINK_SENTIMENT"] == -1].copy()
-    if df_neg.empty:
-        return pd.DataFrame(columns=[
-            "country", "from_faction", "to_faction", 
-            "previous_quarter", "switch_quarter", 
-            "neg_posts_prior", "neg_allies_involved"
-        ])
 
-    # Create helper structures for quick lookup
-    country_faction_over_time = defaultdict(list)
-    for _, row in quarterly_factions_summary_df.iterrows():
-        period = pd.Period(row["year_quarter"], freq='Q')
-        for country in row["countries"]:
-            country_faction_over_time[country].append((period, row["faction"]))
-
-    quarter_faction_members = {
-        (pd.Period(row["year_quarter"], freq='Q'), row["faction"]): set(row["countries"])
-        for _, row in quarterly_factions_summary_df.iterrows()
-    }
-
-    # Identify switches
-    switches = []
-    for country, history in country_faction_over_time.items():
-        history.sort(key=lambda x: x[0])
-        for i in range(1, len(history)):
-            prev_q, prev_f = history[i-1]
-            curr_q, curr_f = history[i]
-            if curr_q == prev_q + 1 and prev_f != curr_f:
-                switches.append({
-                    "country": country, "from_faction": prev_f, "to_faction": curr_f,
-                    "previous_quarter": prev_q, "switch_quarter": curr_q
-                })
-    switches_df = pd.DataFrame(switches)
-    if switches_df.empty:
-        return pd.DataFrame(columns=[
-            "country", "from_faction", "to_faction", 
-            "previous_quarter", "switch_quarter", 
-            "neg_posts_prior", "neg_allies_involved"
-        ])
-
-    # Check for negative posts in the PREVIOUS quarter
-    def check_neg_posts(row):
-        old_allies = quarter_faction_members.get((row["previous_quarter"], row["from_faction"]), set())
-        old_allies -= {row["country"]}
-        if not old_allies:
-            return pd.Series([0, []])
-        
-        neg_posts = df_neg[
-            (df_neg["year_quarter"] == row["previous_quarter"]) &
-            (
-                ((df_neg["source_country"] == row["country"]) & (df_neg["target_country"].isin(old_allies))) |
-                ((df_neg["target_country"] == row["country"]) & (df_neg["source_country"].isin(old_allies)))
-            )
-        ]
-        
-        involved = pd.unique(neg_posts[["source_country", "target_country"]].values.ravel('K'))
-        involved = sorted([c for c in involved if c != row["country"]])
-        return pd.Series([len(neg_posts), involved])
-
-    switches_df[["neg_posts_prior", "neg_allies_involved"]] = switches_df.apply(check_neg_posts, axis=1)
-    
-    return switches_df[switches_df["neg_posts_prior"] > 0].sort_values("neg_posts_prior", ascending=False).reset_index(drop=True)
-
-# === 5. RECIPROCITY ANALYSIS ===
+# === RECIPROCITY ANALYSIS ===
 
 def response_global(df_country):
     
@@ -875,7 +691,8 @@ def response_intra_country(df_combined):
     print(f"Total responses (SubB -> SubA) within 7 days: {total_responses_global:.0f}")
     print(f"GLOBAL Conditional Probability P(SubB->SubA | SubA->SubB in 7d): {cond_prob:.2%}")
 
-# === 6. RESPONSE SIMILARITY ANALYSIS ===
+
+# === RESPONSE SIMILARITY ANALYSIS ===
 
 def find_reciprocity_pairs_and_similarity(df_interactions, features_list, df_countries):
     """
