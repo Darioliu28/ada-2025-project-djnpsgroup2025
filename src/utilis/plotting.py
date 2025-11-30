@@ -6,6 +6,8 @@ import networkx as nx
 import pandas as pd
 import numpy as np 
 import pycountry
+import holoviews as hv
+from holoviews import opts
 
 # Set default renderer for notebooks
 pio.renderers.default = "vscode" 
@@ -69,7 +71,47 @@ def plot_countries_by_metric(avg_props_by_country, metric):
 
     fig.show()
 
+# -- Functions for interaction analysis
 
+def chord_plot(df_final):
+    hv.extension('bokeh')
+
+    # 1. Setup Data (Top 50 to prevent overlapping text)
+    # We use the Log-Normalized data we created earlier
+    top_interactions = df_final.head(50).copy()
+    chord_data = top_interactions[['Country_A', 'Country_B', 'norm_log']]
+    chord_data.columns = ['source', 'target', 'value']
+
+    # 2. Create the Chord Object
+    chord = hv.Chord(chord_data)
+
+    # 3. Apply Styling with Labels
+    # labels='index' tells it to use the country name as the label
+    viz = chord.opts(
+        opts.Chord(
+            # --- Labels ---
+            labels='index',           # <--- THIS enables the names
+            label_text_font_size='10pt',
+            label_text_color='black',
+            
+            # --- Colors & Ribbons ---
+            cmap='Category20',        # Palette for the countries (nodes)
+            edge_cmap='Category20',   # Palette for the ribbons
+            edge_color='source',      # Ribbon matches the source country color
+            node_color='index',       # Arc matches the country color
+            
+            # --- Interaction ---
+            edge_hover_line_color='black',
+            node_hover_fill_color='red',
+            
+            # --- Layout ---
+            width=750, 
+            height=750,
+            title="Inter-Country Digital Connections"
+        )
+    )
+
+    return viz
 # -- Functions for cluster with embedding analysis --
 
 def plot_kmeans_elbow(elbow_df):

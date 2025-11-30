@@ -219,6 +219,44 @@ def get_cluster_samples(subreddit_labels, all_cluster_labels, n_samples=10):
     print(f"Returning samples for {len(cluster_samples)} total clusters.")
     return cluster_samples
 
+# === 2. COUNTRY INTERACTION ANALYSIS
+
+def calculate_normalized_interactions(country_post_counts, df_post_between_countries):
+    total_posts_map = country_post_counts.to_dict()
+
+    raw_interactions = (
+        df_post_between_countries.groupby(['source_country', 'target_country'])
+        .size()
+        .reset_index(name='n_interactions')
+    )
+    raw_interactions = raw_interactions.query("source_country != target_country").copy()
+    raw_interactions['sorted_pair'] = raw_interactions.apply(
+        lambda row: tuple(sorted([row['source_country'], row['target_country']])), axis=1
+    )
+
+    df_undirected = (
+        raw_interactions.groupby('sorted_pair')['n_interactions']
+        .sum()
+        .reset_index()
+    )
+
+    df_undirected[['Country_A', 'Country_B']] = pd.DataFrame(
+        df_undirected['sorted_pair'].tolist(), index=df_undirected.index
+    )
+
+    df_undirected['total_posts_A'] = df_undirected['Country_A'].map(total_posts_map)
+    df_undirected['total_posts_B'] = df_undirected['Country_B'].map(total_posts_map)
+
+    df_undirected['norm_log'] = (
+        df_undirected['n_interactions'] / 
+        np.log1p(df_undirected['total_posts_A'] + df_undirected['total_posts_B'])
+    )
+
+    df_final = df_undirected.sort_values(by='norm_log', ascending=False)
+
+    return df_final
+
+
 
 # === 2. EMBEDDING-FACTION ANALYSIS ===
 
@@ -480,7 +518,6 @@ def map_countries_to_posts(df_posts, df_countries):
     df_links_with_countries["TIMESTAMP"] = pd.to_datetime(df_links_with_countries["TIMESTAMP"], errors='coerce')
     df_links_with_countries["year_quarter"] = df_links_with_countries["TIMESTAMP"].dt.to_period("Q")
     return df_links_with_countries.dropna(subset=['year_quarter'])
-    
 
 def analyze_source_normalized_factions_over_time(df_post_between_countries):
     """
