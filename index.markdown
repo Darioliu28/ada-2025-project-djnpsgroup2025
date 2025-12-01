@@ -16,7 +16,7 @@ Before we launch into the deeper analysis, we establish our bearings. After filt
 ##### Linguistic Signatures: What the World is Talking About
 Our first stop reveals the inherent character of these digital nation-states by studying the average linguistic properties of their posts. We found clear alignment with global reality:
 
-*   **The Highest Peaks of Sentiment:** Countries like **Sri Lanka, Israel, Mongolia, Saudi Arabia, and Bangladesh** registered the **highest average religious sentiment** (`LIWC_Relig`), mirroring the centrality of religion in their national discourse [9].
+*   **The Highest Peaks of Sentiment:** Countries like **Sri Lanka, Israel, Mongolia, Saudi Arabia, and Bangladesh** registered the **highest average religious sentiment** (`LIWC_Relig`), mirroring the centrality of religion in their national discourse.
 *   **The Secular Valleys:** Conversely, **Albania, Bulgaria, Estonia, and Hong Kong** displayed the lowest religious sentiment scores, consistent with known global trends of secularism or post-communist atheism.
 
 ##### Verifying Global Routes: Top Country Interactions
@@ -24,7 +24,7 @@ The most crucial step in validating our lens is confirming that the online inter
 
 1.  **United Kingdom and Ireland:** Highlighting strong **geographic and cultural ties**.
 2.  **Iran and the United States:** Reflecting intense **geopolitical discourse**.
-3.  **India and Pakistan:** Indicating profound regional connections and **rivalries** [11].
+3.  **India and Pakistan:** Indicating profound regional connections and **rivalries**.
 4.  **Brazil and Portugal:** Demonstrating enduring **linguistic and historical ties**.
 
 These findings solidify the reliability of our approved country mapping, showing it successfully captures meaningful online interactions.
@@ -45,7 +45,7 @@ We noted that merely calculating raw embedding distance often failed to capture 
 To identify genuine country alliances—or digital **factions**—we constructed a network graph where edge weights were based on **normalized positive interactions** between countries, preventing massive countries from dominating the results simply by volume. This process detected 11 distinct factions.
 
 We tracked these alliances over time (quarter-to-quarter) to find the most **stable bonds**:
-*   **Brazil** and **Portugal** remained together in the same faction 78.57% of the time [25].
+*   **Brazil** and **Portugal** remained together in the same faction 78.57% of the time.
 *   **Ireland** and the **United Kingdom** also held steady at 78.57%.
 *   **Croatia** and **Serbia** were stable 71.42% of the time.
 
