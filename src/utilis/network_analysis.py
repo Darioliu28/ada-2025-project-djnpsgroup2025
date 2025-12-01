@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
+import src.utilis.network_analysis as na
 import networkx as nx
 import sys
 from IPython.display import display
@@ -374,3 +374,44 @@ def calculate_country_shortest_paths(all_shortest_paths, country_csv_path, outpu
     
     else:
         print("\nNo shortest paths found between any two mapped countries.")
+
+# --- Constants for network analysis ---
+# Path for the saved/loaded pre-computed graph
+PATH = "data/"
+FILENAME_TITLES = 'soc-redditHyperlinks-title.tsv'
+FILENAME_BODIES = 'soc-redditHyperlinks-body.tsv'
+GRAPH_FILENAME = os.path.join(PATH, "subreddit_graph.gpickle")
+
+# Path for the country mapping file
+COUNTRY_CSV_FILENAME = os.path.join(PATH, "country_matches_map_exp.csv")
+
+# Path for the final output file
+COUNTRY_PATHS_OUTPUT = os.path.join(PATH, "country_shortest_paths_output.csv")
+
+df_title, df_body = na.load_dataframes(PATH, FILENAME_TITLES, FILENAME_BODIES)
+
+if df_title is not None and df_body is not None:
+    print("--- Titles DataFrame (Raw) ---")
+    display(df_title.head())
+    print("\n--- Bodies DataFrame (Raw) ---")
+    display(df_body.head())
+
+#na.remove_saved_graph(GRAPH_FILENAME)
+
+graph, source_subreddits, all_shortest_paths = None, None, None
+if df_title is not None:
+    graph, source_subreddits, all_shortest_paths = na.load_or_build_graph_data(df_title, GRAPH_FILENAME)
+else:
+    print("df_title not loaded, cannot build graph.")
+
+if graph:
+    na.plot_country_graph(graph, COUNTRY_CSV_FILENAME)
+else:
+    print("Graph not loaded, cannot plot country graph.")
+
+# --- Calculate and save country-to-country shortest paths ---
+
+if all_shortest_paths:
+    na.calculate_country_shortest_paths(all_shortest_paths, COUNTRY_CSV_FILENAME, COUNTRY_PATHS_OUTPUT)
+else:
+    print("Shortest paths not available, cannot calculate country paths.")

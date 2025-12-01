@@ -10,6 +10,7 @@ import holoviews as hv
 from holoviews import opts
 import plotly.graph_objects as go
 import plotly.colors as pc
+from sklearn.manifold import MDS
 
 # Set default renderer for notebooks
 pio.renderers.default = "vscode" 
@@ -415,5 +416,111 @@ def heatmap_co_occurrence(target_countries, q_factions_norm_df):
         color_continuous_scale='Viridis'
     )
     fig.show()
+
+# -- Functions for shortest path analysis
+
+def plot_MDS_shortest_path(df_country_paths):
+
+    all_countries = np.unique(
+        np.concatenate([
+            df_country_paths['source_country'].unique(), 
+            df_country_paths['target_country'].unique()
+        ])
+    )
+
+    matrix_df = df_country_paths.pivot(
+        index='source_country', 
+        columns='target_country', 
+        values='shortest_path_length'
+    )
+
+    matrix_df = matrix_df.reindex(index=all_countries, columns=all_countries)
+
+    np.fill_diagonal(matrix_df.values, 0)
+
+    matrix_df = matrix_df.replace([np.inf, -np.inf], np.nan)
+
+    max_path = matrix_df.max().max()
+    penalty_val = max_path + 2 if not pd.isna(max_path) else 10
+
+    matrix_df = matrix_df.fillna(penalty_val)
+    matrix_symmetric = (matrix_df.values + matrix_df.values.T) / 2
+
+    embedding = MDS(
+        n_components=2, 
+        dissimilarity='precomputed', 
+        random_state=42, 
+        normalized_stress='auto'
+    )
+    transformed = embedding.fit_transform(matrix_symmetric)
+
+    df_coords = pd.DataFrame(transformed, columns=['x', 'y'])
+    df_coords['Country'] = all_countries 
+
+    df_coords['color_gradient'] = df_coords['x'] + df_coords['y']
+
+    fig = px.scatter(
+        df_coords, 
+        x='x', 
+        y='y', 
+        text='Country',
+        hover_name='Country',
+        color='color_gradient',
+        color_continuous_scale='Turbo',
+        size_max=20
+    )
+
+    fig.update_traces(
+        marker=dict(size=12, opacity=0.8, line=dict(width=1, color='White')),
+        textposition='top center',
+        textfont=dict(family="Arial", size=10, color="gray")
+    )
+
+    fig.update_layout(
+        title="The 'Reddit Geography' of Nations (MDS Projection)",
+        title_x=0.5,
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, title=''),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, title=''),
+        plot_bgcolor='white',
+        showlegend=False,
+        coloraxis_showscale=False,
+        height=800
+    )
+
+    fig.show()
+
+# -- Functions for sport analysis
+
+def plot_sunburst(df_top_sport_per_country):
+
+    fig = px.sunburst(
+        df_top_sport_per_country,
+        path=['Sport', 'Country'],  
+        values='total_interactions', 
+        color='Sport',               
+        color_discrete_sequence=px.colors.qualitative.Pastel,
+        hover_data=['total_interactions']
+    )
+
+    fig.update_layout(
+        title_text="Global Sports Fandom: Top Sport by Country",
+        title_x=0.5,          
+        font_family="Arial",   
+        paper_bgcolor='rgba(0,0,0,0)', 
+        plot_bgcolor='rgba(0,0,0,0)',
+        height=700,            
+        margin=dict(t=50, l=0, r=0, b=0) 
+    )
+
+    # 3. Refine the Text Info
+    fig.update_traces(
+        textinfo="label+percent parent",
+        insidetextorientation='radial'  
+    )
+
+    fig.show()
+
+
+
 
 
