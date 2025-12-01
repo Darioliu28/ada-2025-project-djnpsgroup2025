@@ -587,6 +587,7 @@ def response_global(df_country):
     print(f"Total 'initiator' interactions (A->B) analyzed: {total_initiators_global}")
     print(f"Total responses (B->A) within 7 days: {total_responses_global:.0f}")
     print(f"GLOBAL Conditional Probability P(B->A | A->B in 7d): {conditioned_prob:.2%}")
+    return total_initiators_global, total_responses_global
 
 def response_intra_country(df_combined):
     
@@ -690,7 +691,7 @@ def response_intra_country(df_combined):
     print(f"Total 'initiator' interactions (SubA -> SubB) analyzed: {total_initiators_global}")
     print(f"Total responses (SubB -> SubA) within 7 days: {total_responses_global:.0f}")
     print(f"GLOBAL Conditional Probability P(SubB->SubA | SubA->SubB in 7d): {cond_prob:.2%}")
-
+    return total_initiators_global, total_responses_global
 
 # === RESPONSE SIMILARITY ANALYSIS ===
 
@@ -898,3 +899,20 @@ def response_similarity(df_combined, df_countries):
 
     else:
         print("\nAnalysis not completed (missing reciprocity or baseline data).")
+    # Create a temporary DataFrame for plotting
+    df_plot = pd.DataFrame({
+        'Similarity': reciprocity_similarities + baseline_similarities,
+        'Type': ['Reciprocal'] * len(reciprocity_similarities) + ['Random'] * len(baseline_similarities)
+    })
+
+    plt.figure(figsize=(8, 6))
+    
+    # Use violinplot to visualize both density and quartiles (or use boxplot for simplicity)
+    sns.violinplot(data=df_plot, x='Type', y='Similarity', palette="muted", split=True)
+    
+    # Add actual data points (jitter) to show the real data density
+    sns.stripplot(data=df_plot, x='Type', y='Similarity', color='black', size=2, alpha=0.3)
+
+    plt.title('Direct Comparison: Reciprocity vs. Random')
+    plt.grid(axis='y', alpha=0.3)
+    plt.show()

@@ -522,6 +522,36 @@ def plot_sunburst(df_top_sport_per_country):
 
     fig.show()
 
+# --Response analysis--
+
+def funnel_graph_global(total_initiators_global, total_responses_global):
+    fig = go.Figure(go.Funnel(
+        # Labels tradotte
+        y = ["Total Initiations (A->B)", "Received Responses (B->A)"],
+        x = [total_initiators_global, total_responses_global],
+        textposition = "inside",
+        textinfo = "value+percent initial",
+        opacity = 0.65, 
+        marker = {"color": ["#1f77b4", "#2ca02c"]}
+    ))
+
+    # Titolo tradotto
+    fig.update_layout(title_text="Global Reciprocity Funnel")
+    return fig
+
+def funnel_graph_intra_country(total_initiators, total_responses):
+    fig = go.Figure(go.Funnel(
+        # Labels adattate per i Subreddit
+        y = ["Total Initiations (Sub A -> Sub B)", "Received Responses (Sub B -> Sub A)"],
+        x = [total_initiators, total_responses],
+        textposition = "inside",
+        textinfo = "value+percent initial",
+        opacity = 0.65, 
+        marker = {"color": ["#1f77b4", "#FF7F0E"]} # Blu -> Arancione (per distinguerlo dal grafico inter-country)
+    ))
+
+    fig.update_layout(title_text="Global Intra-Country Reciprocity Funnel (Subreddits)")
+    return fig
 
 
 
