@@ -1,6 +1,5 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import src.utilis.network_analysis as na
 import networkx as nx
 import sys
 from IPython.display import display
@@ -388,7 +387,7 @@ COUNTRY_CSV_FILENAME = os.path.join(PATH, "country_matches_map_exp.csv")
 # Path for the final output file
 COUNTRY_PATHS_OUTPUT = os.path.join(PATH, "country_shortest_paths_output.csv")
 
-df_title, df_body = na.load_dataframes(PATH, FILENAME_TITLES, FILENAME_BODIES)
+df_title, df_body = load_dataframes(PATH, FILENAME_TITLES, FILENAME_BODIES)
 
 if df_title is not None and df_body is not None:
     print("--- Titles DataFrame (Raw) ---")
@@ -400,18 +399,18 @@ if df_title is not None and df_body is not None:
 
 graph, source_subreddits, all_shortest_paths = None, None, None
 if df_title is not None:
-    graph, source_subreddits, all_shortest_paths = na.load_or_build_graph_data(df_title, GRAPH_FILENAME)
+    graph, source_subreddits, all_shortest_paths = load_or_build_graph_data(df_title, GRAPH_FILENAME)
 else:
     print("df_title not loaded, cannot build graph.")
 
 if graph:
-    na.plot_country_graph(graph, COUNTRY_CSV_FILENAME)
+    plot_country_graph(graph, COUNTRY_CSV_FILENAME)
 else:
     print("Graph not loaded, cannot plot country graph.")
 
 # --- Calculate and save country-to-country shortest paths ---
 
 if all_shortest_paths:
-    na.calculate_country_shortest_paths(all_shortest_paths, COUNTRY_CSV_FILENAME, COUNTRY_PATHS_OUTPUT)
+    calculate_country_shortest_paths(all_shortest_paths, COUNTRY_CSV_FILENAME, COUNTRY_PATHS_OUTPUT)
 else:
     print("Shortest paths not available, cannot calculate country paths.")
