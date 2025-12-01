@@ -1,6 +1,7 @@
 ---
-layout: pagetitle: The Global Digital Odyssey: Traveling the World Through the Orange Reddit Lens
-subtitle: ADA Team
+layout: default
+pagetitle: "The Global Digital Odyssey: Traveling the World Through the Orange Reddit Lens"
+subtitle: "ADA Team"
 ---
 
 ### Context: Activating the Lens
