@@ -80,11 +80,11 @@ def chord_plot(df_final):
     hv.extension('bokeh')
 
     top_interactions = df_final.head(50).copy()
-    chord_data = top_interactions[['Country_A', 'Country_B', 'norm_log']]
+    
+    chord_data = top_interactions[['Country_A', 'Country_B', 'n_interactions']]
     chord_data.columns = ['source', 'target', 'value']
 
     chord = hv.Chord(chord_data)
-
 
     viz = chord.opts(
         opts.Chord(
@@ -96,13 +96,15 @@ def chord_plot(df_final):
             edge_cmap='Category20',  
             edge_color='source',      
             node_color='index',       
+
+            edge_line_color=None,
             
             edge_hover_line_color='black',
             node_hover_fill_color='red',
             
             width=750, 
             height=750,
-            title="Inter-Country Digital Connections"
+            title="Inter-Country Digital Connections (Interaction Volume)"
         )
     )
 
