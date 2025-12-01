@@ -27,6 +27,7 @@ baseurl: "/ada-2025-project-djnpsgroup2025" # the subpath of your site, e.g. /bl
 url: "https://vertigo277.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: jekyllrb
 github_username:  jekyll
+layout: pagetitle
 
 # Build settings
 theme: minima
