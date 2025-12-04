@@ -4,7 +4,7 @@ title: Home
 ---
 
 <div class="boring-hero">
-  <h1>The World is Grey and Boring</h1>
+  <!-- <h1>The World is Grey and Boring</h1> -->
   
   <img src="{{ "cartoon.png" | relative_url }}" alt="Cartoon" style="width: 500px; margin-bottom: 20px;">
   
