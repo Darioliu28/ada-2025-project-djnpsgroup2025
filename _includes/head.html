@@ -29,73 +29,77 @@ a, button, input, textarea, select {
   
 </style>
 
-
-
-
-
-
 <style>
-  /* Default Variables (Boring Mode) */
+  /* 1. THE BORING THEME (Default) */
   :root {
-    --bg-color: #ffffff;
-    --text-color: #111111;
-    --header-color: #e8e8e8;
-    --link-color: #b00; /* Minima default red */
+    --bg-color: #f0f0f0;         /* Dull Grey */
+    --text-color: #333333;       /* Dark Grey */
+    --header-color: #ffffff;
+    --link-color: #555555;       /* Boring Link Color */
+    --font-family: 'Times New Roman', serif;
   }
 
-  /* Reddit Mode Variables */
+  /* 2. THE REDDIT THEME (Applied via class) */
   body.reddit-mode {
-    --bg-color: #DAE0E6; /* Reddit Gray */
-    --text-color: #222222;
+    --bg-color: #FFF0E0;         /* Very Light Orange */
+    --text-color: #000000;
     --header-color: #ffffff; 
-    --link-color: #FF4500; /* Reddit Orange */
+    --link-color: #FF4500;       /* Reddit Orange */
+    --font-family: 'Verdana', sans-serif;
   }
 
-  /* Apply the variables to the site */
+  /* Apply variables */
   body {
     background-color: var(--bg-color) !important;
     color: var(--text-color) !important;
-    transition: background-color 0.3s ease, color 0.3s ease;
-  }
-  
-  .site-header {
-    background-color: var(--header-color);
-    border-top: 5px solid var(--link-color); /* Little orange bar on top */
+    font-family: var(--font-family) !important;
+    transition: background-color 0.8s ease, color 0.5s ease; /* Slow transition */
   }
 
   a, .site-title, .page-link {
     color: var(--link-color) !important;
   }
-  
-  /* Make the button look nice */
-  #reddit-glasses-btn {
-      font-weight: bold;
-      color: var(--text-color);
+
+  /* Hero Section Styling (The Top Part) */
+  .boring-hero {
+    height: 100vh; /* Takes up full screen height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: #e0e0e0;
+    border-bottom: 5px solid #333;
+  }
+
+  /* The Big Button */
+  .glasses-btn {
+    margin-top: 20px;
+    padding: 15px 30px;
+    font-size: 20px;
+    background-color: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: transform 0.2s;
+  }
+  .glasses-btn:hover {
+    transform: scale(1.05);
+    background-color: #FF4500; /* Turns orange on hover */
   }
 </style>
 
 <script>
-  function toggleRedditMode() {
-    const body = document.body;
-    const btn = document.getElementById("reddit-glasses-btn");
-
-    // Toggle the class
-    body.classList.toggle("reddit-mode");
-
-    // Change button text and save preference
-    if (body.classList.contains("reddit-mode")) {
-      btn.innerText = "🕶️ Take 'em off";
-      localStorage.setItem('redditTheme', 'enabled'); // Remember choice
-    } else {
-      btn.innerText = "👓 Reddit Glasses";
-      localStorage.setItem('redditTheme', 'disabled');
+  function activateRedditMode() {
+    // 1. Turn on the orange theme
+    document.body.classList.add("reddit-mode");
+    
+    // 2. Scroll down to the story start
+    const storyStart = document.getElementById("story-start");
+    if(storyStart) {
+      storyStart.scrollIntoView({ behavior: 'smooth' });
     }
   }
-
-  // Check for saved preference on load
-  document.addEventListener('DOMContentLoaded', (event) => {
-    if (localStorage.getItem('redditTheme') === 'enabled') {
-      toggleRedditMode();
-    }
-  });
 </script>
+
