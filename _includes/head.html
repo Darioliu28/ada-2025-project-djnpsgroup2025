@@ -14,13 +14,31 @@
 
 
 <style>
-  /* This targets the whole page */
-  * {
-    cursor: url('https://epfl-ada.github.io/ada-2025-project-djnpsgroup2025/cursor.png'), auto;
+  :root,
+  *,
+  *::before,
+  *::after {
+    cursor: url('https://epfl-ada.github.io/ada-2025-project-djnpsgroup2025/cursor.png'), auto !important;
   }
-  
-  /* This ensures the cursor stays as glasses even when hovering over links */
-  a, button, input {
-    cursor: url('https://epfl-ada.github.io/ada-2025-project-djnpsgroup2025/cursor.png'), pointer;
+
+  /* Interactive states that normally override the cursor */
+  a, 
+  a:visited,
+  a:hover,
+  a:active,
+  button,
+  button:hover,
+  button:active,
+  input,
+  input:hover,
+  input:active,
+  select,
+  select:hover,
+  select:active,
+  textarea,
+  textarea:hover,
+  textarea:active {
+    cursor: url('https://epfl-ada.github.io/ada-2025-project-djnpsgroup2025/cursor.png'), auto !important;
   }
 </style>
+
