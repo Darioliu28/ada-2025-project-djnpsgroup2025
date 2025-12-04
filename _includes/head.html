@@ -14,31 +14,18 @@
 
 
 <style>
-  :root,
-  *,
-  *::before,
-  *::after {
+/* Apply cursor everywhere */
+*, *::before, *::after {
     cursor: url('https://epfl-ada.github.io/ada-2025-project-djnpsgroup2025/cursor.png'), auto !important;
-  }
+}
 
-  /* Interactive states that normally override the cursor */
-  a, 
-  a:visited,
-  a:hover,
-  a:active,
-  button,
-  button:hover,
-  button:active,
-  input,
-  input:hover,
-  input:active,
-  select,
-  select:hover,
-  select:active,
-  textarea,
-  textarea:hover,
-  textarea:active {
-    cursor: url('https://epfl-ada.github.io/ada-2025-project-djnpsgroup2025/cursor.png'), auto !important;
-  }
+/* Force same cursor for clickable elements */
+a, button, input, textarea, select {
+    cursor: url('https://epfl-ada.github.io/ada-2025-project-djnpsgroup2025/cursor.png') !important;
+}
+
+
+
+  
 </style>
 
