@@ -12,25 +12,10 @@
 
 <link rel="icon" type="image/png" href="https://epfl-ada.github.io/ada-2025-project-djnpsgroup2025/favicon.png">
 
-
 <style>
-/* Apply cursor everywhere */
-*, *::before, *::after {
-    cursor: url('https://epfl-ada.github.io/ada-2025-project-djnpsgroup2025/cursor.png'), auto !important;
-}
-
-/* Force same cursor for clickable elements */
-a, button, input, textarea, select {
-    cursor: url('https://epfl-ada.github.io/ada-2025-project-djnpsgroup2025/cursor.png') !important;
-}
-
-
-
+  /* --- 1. THEME VARIABLES --- */
   
-</style>
-
-<style>
-  /* 1. THE BORING THEME (Default) */
+  /* The Boring Theme (Default) */
   :root {
     --bg-color: #f0f0f0;         /* Dull Grey */
     --text-color: #333333;       /* Dark Grey */
@@ -39,7 +24,7 @@ a, button, input, textarea, select {
     --font-family: 'Times New Roman', serif;
   }
 
-  /* 2. THE REDDIT THEME (Applied via class) */
+  /* The Reddit Theme (Applied via class) */
   body.reddit-mode {
     --bg-color: #FFF0E0;         /* Very Light Orange */
     --text-color: #000000;
@@ -48,17 +33,36 @@ a, button, input, textarea, select {
     --font-family: 'Verdana', sans-serif;
   }
 
-  /* Apply variables */
+  /* --- 2. BASE STYLES --- */
+  
+  /* Apply variables to body */
   body {
     background-color: var(--bg-color) !important;
     color: var(--text-color) !important;
     font-family: var(--font-family) !important;
-    transition: background-color 0.8s ease, color 0.5s ease; /* Slow transition */
+    transition: background-color 0.8s ease, color 0.5s ease; /* Smooth transition */
   }
 
   a, .site-title, .page-link {
     color: var(--link-color) !important;
   }
+
+  /* --- 3. CURSOR LOGIC --- */
+  
+  /* This is the fix: We scope the cursor to 'body.reddit-mode'. 
+     The cursor will be normal until the class is added.
+  */
+  body.reddit-mode,
+  body.reddit-mode *, 
+  body.reddit-mode a, 
+  body.reddit-mode button, 
+  body.reddit-mode input, 
+  body.reddit-mode textarea, 
+  body.reddit-mode select {
+      cursor: url('https://epfl-ada.github.io/ada-2025-project-djnpsgroup2025/cursor.png'), auto !important;
+  }
+
+  /* --- 4. HERO & BUTTON STYLES --- */
 
   /* Hero Section Styling (The Top Part) */
   .boring-hero {
@@ -92,7 +96,7 @@ a, button, input, textarea, select {
 
 <script>
   function activateRedditMode() {
-    // 1. Turn on the orange theme
+    // 1. Turn on the orange theme AND the custom cursor
     document.body.classList.add("reddit-mode");
     
     // 2. Scroll down to the story start
@@ -102,4 +106,3 @@ a, button, input, textarea, select {
     }
   }
 </script>
-
