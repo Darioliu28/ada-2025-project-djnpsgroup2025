@@ -29,3 +29,73 @@ a, button, input, textarea, select {
   
 </style>
 
+
+
+
+
+
+<style>
+  /* Default Variables (Boring Mode) */
+  :root {
+    --bg-color: #ffffff;
+    --text-color: #111111;
+    --header-color: #e8e8e8;
+    --link-color: #b00; /* Minima default red */
+  }
+
+  /* Reddit Mode Variables */
+  body.reddit-mode {
+    --bg-color: #DAE0E6; /* Reddit Gray */
+    --text-color: #222222;
+    --header-color: #ffffff; 
+    --link-color: #FF4500; /* Reddit Orange */
+  }
+
+  /* Apply the variables to the site */
+  body {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .site-header {
+    background-color: var(--header-color);
+    border-top: 5px solid var(--link-color); /* Little orange bar on top */
+  }
+
+  a, .site-title, .page-link {
+    color: var(--link-color) !important;
+  }
+  
+  /* Make the button look nice */
+  #reddit-glasses-btn {
+      font-weight: bold;
+      color: var(--text-color);
+  }
+</style>
+
+<script>
+  function toggleRedditMode() {
+    const body = document.body;
+    const btn = document.getElementById("reddit-glasses-btn");
+
+    // Toggle the class
+    body.classList.toggle("reddit-mode");
+
+    // Change button text and save preference
+    if (body.classList.contains("reddit-mode")) {
+      btn.innerText = "🕶️ Take 'em off";
+      localStorage.setItem('redditTheme', 'enabled'); // Remember choice
+    } else {
+      btn.innerText = "👓 Reddit Glasses";
+      localStorage.setItem('redditTheme', 'disabled');
+    }
+  }
+
+  // Check for saved preference on load
+  document.addEventListener('DOMContentLoaded', (event) => {
+    if (localStorage.getItem('redditTheme') === 'enabled') {
+      toggleRedditMode();
+    }
+  });
+</script>
