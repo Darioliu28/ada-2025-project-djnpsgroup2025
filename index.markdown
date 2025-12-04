@@ -7,7 +7,7 @@ title: Home
   <h1>The World is Grey.</h1>
   <p>Standard analysis. Standard data. Boring reality.</p>
   
-  <img src="{{ "/assets/cartoon.png" | relative_url }}" alt="Cartoon" style="width: 300px; margin-bottom: 20px;">
+  <img src="{{ "cartoon.png" | relative_url }}" alt="Cartoon" style="width: 300px; margin-bottom: 20px;">
   
   <button class="glasses-btn" onclick="activateRedditMode()">
     👓 Put on Reddit Glasses
