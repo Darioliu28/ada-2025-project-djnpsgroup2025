@@ -16,6 +16,7 @@ mls,Soccer
 gaming,eSports
 footballhighlights,Soccer
 baseball,Baseball
+indiegaming,eSports
 hockeygtt,Hockey
 busking,Winter Sports
 civtransportmap,Sport
@@ -36,11 +37,10 @@ simpleliving,Aquatics
 golf,Golf
 advancedrunning,Running
 socalhiking,Hiking
+dota2,eSports
 bjj,Combat Sports
 fifaclubs,Soccer
-hockeyjerseys,Hockey
 baseballcirclejerk,Baseball
-dota2,eSports
 hiking,Hiking
 formula1,Formula 1
 ldnamateurcricketclub,Cricket
@@ -56,6 +56,7 @@ argaming,eSports
 fsusports,Sport
 getgrowing,Aquatics
 cycling,Cycling
+giftofgames,Sport
 civhybridgames,Sport
 portsmouth,Sport
 rocketleaguefriends,eSports
@@ -67,12 +68,18 @@ hockeycirclejerk,Hockey
 powerlifting,Fitness
 hockeymockdrafts,Hockey
 sportsfannews,Sport
+wildhockey,Hockey
 nhl,Hockey
 ussoccer,Soccer
+gamingcirclejerk,eSports
 gamingkc,eSports
+overwatch,eSports
+hoarding,Winter Sports
 runningcirclejerk,Running
 gamingsuggestions,eSports
 bestofreports,eSports
+nmsportals,Sport
+truegaming,eSports
 barstoolsports,Sport
 handball,Handball
 athlone,Aquatics
@@ -90,7 +97,7 @@ usahockey,Hockey
 rugbyunion,Rugby
 jaxgaming,eSports
 wargames,Sport
-wildhockey,Hockey
+stopgaming,eSports
 surfing,Aquatics
 cfl,American Football
 basketball,Basketball
@@ -108,6 +115,7 @@ portsmouthnh,Sport
 hockeygoalies,Hockey
 wichita_gaming,eSports
 futbolmx,Soccer
+discgolf,Golf
 simracing,Motorsport
 unicycling,Cycling
 cadskireports,eSports
@@ -118,6 +126,7 @@ neuroscience,Soccer
 climbing,Climbing
 bicyclingcirclejerk,Cycling
 dota2circlejerk,eSports
+hitchhiking,Hiking
 internationalhockey,Hockey
 mlb,Baseball
 bodybuilding,Fitness
@@ -157,9 +166,9 @@ skateboarding,Skateboarding
 azhiking,Hiking
 swimming,Aquatics
 badminton,Badminton
-gamingcirclejerk,eSports
 trailrunning,Running
 quefaitlapolice,Soccer
+feverclangaming,eSports
 akgaming,eSports
 yorkcycling,Cycling
 hockeyplayers,Hockey
@@ -168,7 +177,6 @@ arenafootball,Soccer
 cricketshitpost,Cricket
 snowboarding,Winter Sports
 norcalhiking,Hiking
-overwatch,eSports
 scottishfootball,Soccer
 crowdsourcing,Motorsport
 kiteboarding,Skateboarding
@@ -182,20 +190,19 @@ usarugby,Rugby
 horseracing,Motorsport
 randomactsofgaming,eSports
 subredditreports,eSports
-truegaming,eSports
 basketballgm,Basketball
 baseballmogul,Baseball
-nascar,Motorsport
 fantasysports4charity,Sport
+nascar,Motorsport
 footballdownload,Soccer
 ligue1,Soccer
 judo,Combat Sports
+soccerbanners,Soccer
 soccerstreams,Soccer
 hockeyquestionmark,Hockey
 tablets,Tennis
 weightlifting,Fitness
 athleticgirls,Sport
-giftofgames,Sport
 runreports,eSports
 angelsbaseball,Baseball
 csgoscammers,eSports
@@ -222,18 +229,18 @@ couchsurfing,Aquatics
 ausgaming,eSports
 webgames,Sport
 motorsports,Sport
-hoarding,Winter Sports
 pcgamingtechsupport,eSports
 gameshow,Sport
 kickboxing,Combat Sports
+skydiving,Aquatics
 dota2pubstomps,eSports
+compdota2,eSports
+dota2pubs,eSports
 sailing,Aquatics
-indiegaming,eSports
 thatsgoodsports,Sport
 independentbaseball,Baseball
 basketballabroad,Basketball
 footballmanagergames,Soccer
-discgolf,Golf
 soccerbooks,Soccer
 premierleague,Soccer
 soccerbetting,Soccer
@@ -243,6 +250,7 @@ hdsoccer,Soccer
 nzsports,Sport
 buhockey,Hockey
 fantasyhockey,Hockey
+olddominionfootball,Soccer
 mobicycling,Cycling
 ottawarunning,Running
 rhythmgames,Sport
@@ -262,4 +270,5 @@ leinsterrugby,Rugby
 soccernoobs,Soccer
 soccerdownloadclub,Soccer
 dancesport,Sport
+hillclimbracing,Motorsport
 rally,Motorsport

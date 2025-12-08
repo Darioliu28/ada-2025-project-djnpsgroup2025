@@ -11,6 +11,7 @@ from holoviews import opts
 import plotly.graph_objects as go
 import plotly.colors as pc
 from sklearn.manifold import MDS
+import mpld3 # new import
 
 # Set default renderer for notebooks
 pio.renderers.default = "vscode" 
@@ -38,7 +39,18 @@ def plot_top_5_subreddits(avg_props_by_subreddit, target_metrics):
 
 
     plt.tight_layout()
-    plt.show()
+    plt.show() 
+
+    output_filename = 'images/top_5_subreddits_metrics.png'
+    
+    # 2. SAVE the figure immediately after preparing it (and after show() if used)
+    # Use the 'fig' object's savefig method, which is safer than the global plt.savefig()
+    fig.savefig(output_filename, bbox_inches='tight', dpi=300) 
+    
+    # 3. Close the figure to free up memory
+    plt.close(fig)
+
+    return output_filename
 
 def plot_countries_by_metric(avg_props_by_country, metric, title):
 
@@ -72,8 +84,11 @@ def plot_countries_by_metric(avg_props_by_country, metric, title):
         showlegend=False
     )
 
-    fig.show()
 
+    output_filename = 'images/avg_relig_by_country.png'
+    fig.write_image(output_filename, scale=3) 
+    fig.show()
+    
 # -- Functions for interaction analysis
 
 def chord_plot(df_final):
@@ -108,7 +123,12 @@ def chord_plot(df_final):
         )
     )
 
+    output_filename = 'images/country_chord_diagram.html'
+    hv.save(viz, output_filename)
+
     return viz
+
+
 
 # -- Functions for cluster with embedding analysis --
 
@@ -119,13 +139,19 @@ def plot_kmeans_elbow(elbow_df):
     Args:
         elbow_df (pd.DataFrame): DataFrame from calculate_kmeans_elbow.
     """
+    fig = plt.figure(figsize=(10, 6))
     plt.figure(figsize=(10, 6))
     plt.plot(elbow_df['k'], elbow_df['inertia'], marker='o')
     plt.title('K-Means Elbow Plot')
     plt.xlabel('Number of clusters (k)')
     plt.ylabel('Inertia')
     plt.grid(True)
+
+    output_filename = 'images/kmeans_elbow_plot.png' 
+    plt.savefig(output_filename, bbox_inches='tight', dpi=300)
+
     plt.show()
+    plt.close(fig)
 
 def plot_labeled_cluster_map(tsne_df, label_map):
     """
@@ -160,6 +186,10 @@ def plot_labeled_cluster_map(tsne_df, label_map):
         yaxis=dict(title='t-SNE Component 2', showticklabels=False),
         legend_title_text='Subreddit Topic'
     )
+
+    output_filename = 'images/tsne_cluster_map.html' 
+    fig.write_html(output_filename)
+
     fig.show()
 
 # -- Functions for factions with positive posts analysis --
@@ -211,6 +241,9 @@ def plot_faction_world_map(factions_df, title):
         legend_title_text='Faction ID'
     )
     fig.show()
+
+    filename = 'images/faction_world_map.html'
+    fig.write_html(filename)
 
 def plot_signed_network(mapped_posts_df, factions_df_norm, title):
     """
@@ -285,6 +318,9 @@ def plot_signed_network(mapped_posts_df, factions_df_norm, title):
     plt.tight_layout()
     plt.show() 
     plt.close(fig_net)
+
+    filename = 'images/signed_network.png'
+    fig_net.savefig(filename)
 
 def plot_faction_evolution(y_factions_norm_df):
     
@@ -386,6 +422,9 @@ def plot_faction_evolution(y_factions_norm_df):
     
     fig.show()
 
+    filename = 'images/faction_evolution.html'
+    fig.write_html(filename)
+
 def heatmap_co_occurrence(target_countries, q_factions_norm_df):
 
     pair_counts = {}
@@ -418,6 +457,9 @@ def heatmap_co_occurrence(target_countries, q_factions_norm_df):
         color_continuous_scale='Viridis'
     )
     fig.show()
+
+    filename = 'images/heatmap_co_occurrence.html'
+    fig.write_html(filename)
 
 # -- Functions for shortest path analysis
 
@@ -491,6 +533,9 @@ def plot_MDS_shortest_path(df_country_paths):
 
     fig.show()
 
+    filename = 'images/mds_shortest_path.html'
+    fig.write_html(filename)
+
 # -- Functions for sport analysis
 
 def plot_sunburst(df_top_sport_per_country):
@@ -522,6 +567,9 @@ def plot_sunburst(df_top_sport_per_country):
 
     fig.show()
 
+    filename = 'images/sport_sunburst.html'
+    fig.write_html(filename)
+
 # --Response analysis--
 
 def funnel_graph_global(total_initiators_global, total_responses_global):
@@ -537,6 +585,10 @@ def funnel_graph_global(total_initiators_global, total_responses_global):
 
     # Titolo tradotto
     fig.update_layout(title_text="Global Reciprocity Funnel")
+
+    filename = 'images/funnel_global.html'
+    fig.write_html(filename)
+
     return fig
 
 def funnel_graph_intra_country(total_initiators, total_responses):
@@ -551,6 +603,10 @@ def funnel_graph_intra_country(total_initiators, total_responses):
     ))
 
     fig.update_layout(title_text="Global Intra-Country Reciprocity Funnel (Subreddits)")
+
+    filename = 'images/funnel_intra_country.html'
+    fig.write_html(filename)
+
     return fig
 
 
