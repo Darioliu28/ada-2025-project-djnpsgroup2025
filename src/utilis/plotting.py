@@ -11,7 +11,6 @@ from holoviews import opts
 import plotly.graph_objects as go
 import plotly.colors as pc
 from sklearn.manifold import MDS
-import mpld3 # new import
 
 # Set default renderer for notebooks
 pio.renderers.default = "vscode" 
@@ -56,34 +55,33 @@ def plot_countries_by_metric(avg_props_by_country, metric, title):
 
     plot_df = (
         avg_props_by_country[[metric]]
-        .sort_values(by=metric, ascending=True) 
+        .sort_values(by=metric, ascending=False) 
         .reset_index()
+        .head(70)
     )
 
     fig = px.bar(
         plot_df,
-        x=metric,
-        y="source_country",
-        orientation='h', 
+        x="source_country", 
+        y=metric,            
         title=title,
-        text_auto='.3f', 
-        color=metric,    
-        color_continuous_scale='Viridis', 
-        height=800       
+        text_auto='.3f',
+        color=metric,
+        color_continuous_scale='Viridis',
+        height=600
     )
 
     fig.update_layout(
-        xaxis_title="Average Sentiment Score",
-        yaxis_title="Country",
-        yaxis=dict(
-        dtick=1,         
-        automargin=True   
+        xaxis_title="Country",             
+        yaxis_title="Average Sentiment Score", 
+        xaxis=dict(
+            dtick=1,
+            automargin=True,
+            tickangle=-45 
         ),
-        height=1200,          
-        margin=dict(l=150),    
+        margin=dict(b=150), 
         showlegend=False
     )
-
 
     output_filename = 'images/avg_relig_by_country.png'
     fig.write_image(output_filename, scale=3) 
