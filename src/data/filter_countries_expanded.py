@@ -1,35 +1,28 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 from rapidfuzz import fuzz
 import re
-from tqdm import tqdm
 
-# --- Matching function ---
 def find_match(subreddit, country_map):
     name = subreddit.lower().replace("r/", "")
-    # Split on underscores and digits
     tokens = re.split(r'[^a-z]+', name)
     joined = ''.join(tokens)
 
-    # Direct token match
     for token in tokens + [joined]:
         if token in country_map:
             return country_map[token]
         
-    # Starts/ends with full country names (e.g. norwaynews)
     for key in country_map:
         cleaned_key = key.replace(' ', '')
-        if len(cleaned_key) < 4:  # ignore short codes
+        if len(cleaned_key) < 4:  
             continue
         if name.startswith(cleaned_key) or name.endswith(cleaned_key):
             return country_map[key]
         
-    # Fuzzy match (high threshold, long names only)
     if len(name) > 6:
         best_match, best_score = None, 0
         for key, country in country_map.items():
-            if len(key) < 4:  # skip short country codes
+            if len(key) < 4:  
                 continue
             score = fuzz.partial_ratio(key, name)
             if score > 90 and score > best_score:
@@ -42,7 +35,6 @@ def filter_countries(origin_folder, final_folder):
     df_title = pd.read_csv(origin_folder+"soc-redditHyperlinks-title.tsv", sep="\t")
     df_body = pd.read_csv(origin_folder+"soc-redditHyperlinks-body.tsv", sep="\t")
 
-    #Modify the data format
     time_format = '%Y-%m-%d %H:%M:%S'
     df_title['TIMESTAMP'] = pd.to_datetime(df_title['TIMESTAMP'], format=time_format)
     df_body['TIMESTAMP'] = pd.to_datetime(df_body['TIMESTAMP'], format=time_format)
@@ -69,23 +61,18 @@ def filter_countries(origin_folder, final_folder):
     "LIWC_Assent", "LIWC_Dissent", "LIWC_Nonflu", "LIWC_Filler"
     ]
 
-    # Split POST_PROPERTIES into columns
     df_body[post_props_cols] = df_body["PROPERTIES"].str.split(",", expand=True).astype(float)
     df_title[post_props_cols] = df_title["PROPERTIES"].str.split(",", expand=True).astype(float)
 
-    # Drop the old string column
     df_body = df_body.drop(columns=["PROPERTIES"])
     df_title = df_title.drop(columns=["PROPERTIES"])
     
     df_combined = pd.concat([df_body, df_title], ignore_index=True)
 
-    # Combine both source and target columns into a single Pandas Series
     all_subreddits_series = pd.concat([df_combined['SOURCE_SUBREDDIT'], df_combined['TARGET_SUBREDDIT']])
 
-    # Get the unique values from this combined series and convert to a list
     unique_subreddit_list = all_subreddits_series.unique().tolist()
 
-    # --- Build base map ---
     country_map = {}
 
     # A dictionary mapping native country names to standardized English names
