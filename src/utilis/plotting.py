@@ -245,38 +245,39 @@ def plot_faction_world_map(factions_df, title):
 
 def plot_signed_network(mapped_posts_df, factions_df_norm, title):
     """
-    Generates a detailed NetworkX graph plot based on the provided logic.
+    Generates an interactive Plotly network graph.
     - Nodes are colored by faction.
     - Edges are colored by net sentiment (Green=Positive, Red=Negative).
     - Edge width is log-scaled by total post volume.
     """
     df_negative_posts = mapped_posts_df[mapped_posts_df["LINK_SENTIMENT"] == -1].copy()
     country_negative_links = (
-            df_negative_posts.groupby(["source_country", "target_country"])
-            .size()
-            .reset_index(name="num_negative_posts")
-        )
+        df_negative_posts.groupby(["source_country", "target_country"])
+        .size()
+        .reset_index(name="num_negative_posts")
+    )
 
-        
     df_positive_posts = mapped_posts_df[mapped_posts_df["LINK_SENTIMENT"] == 1].copy()
     country_positive_links_counts = (
-            df_positive_posts.groupby(["source_country", "target_country"])
-            .size()
-            .reset_index(name="num_positive_posts")
-        )
+        df_positive_posts.groupby(["source_country", "target_country"])
+        .size()
+        .reset_index(name="num_positive_posts")
+    )
 
     country_links_combined = pd.merge(
-            country_positive_links_counts,
-            country_negative_links,
-            on=["source_country", "target_country"],
-            how="outer"
-        ).fillna(0)
+        country_positive_links_counts,
+        country_negative_links,
+        on=["source_country", "target_country"],
+        how="outer"
+    ).fillna(0)
 
-    country_links_combined['pair'] = country_links_combined.apply(lambda row: tuple(sorted((row['source_country'], row['target_country']))), axis=1)
+    country_links_combined['pair'] = country_links_combined.apply(
+        lambda row: tuple(sorted((row['source_country'], row['target_country']))), axis=1
+    )
     signed_agg = country_links_combined.groupby('pair').agg(
-            num_positive=('num_positive_posts', 'sum'),
-            num_negative=('num_negative_posts', 'sum')
-        ).reset_index()
+        num_positive=('num_positive_posts', 'sum'),
+        num_negative=('num_negative_posts', 'sum')
+    ).reset_index()
     signed_agg[['country1', 'country2']] = pd.DataFrame(signed_agg['pair'].tolist(), index=signed_agg.index)
 
     signed_agg["net_sentiment_count"] = signed_agg["num_positive"] - signed_agg["num_negative"]
@@ -287,38 +288,108 @@ def plot_signed_network(mapped_posts_df, factions_df_norm, title):
     G_signed = nx.Graph()
     for _, row in signed_agg.iterrows():
         c1, c2 = row['country1'], row['country2']
-        net_sentiment = row['net_sentiment_count']
-        total_posts = row['total_posts']
-        G_signed.add_edge(c1, c2, net_sentiment=net_sentiment, total_posts=total_posts)
+        G_signed.add_edge(c1, c2, 
+                          net_sentiment=row['net_sentiment_count'], 
+                          total_posts=row['total_posts'],
+                          pos_count=row['num_positive'],
+                          neg_count=row['num_negative'])
 
     G_signed.remove_nodes_from(list(nx.isolates(G_signed)))
 
+    pos = nx.spring_layout(G_signed, k=0.6, iterations=60, seed=42)
 
-    edges = G_signed.edges(data=True)
-    edge_colors = ['green' if data['net_sentiment'] > 0 else 'red' if data['net_sentiment'] < 0 else 'grey' for u, v, data in edges]
-    edge_widths = [np.log1p(data['total_posts']) * 0.5 + 0.1 for u, v, data in edges]
 
-    num_factions = factions_df_norm['faction'].nunique()
-    node_color_map = plt.get_cmap('tab20', max(20, num_factions)) 
+    edge_traces = []
+    
+    for u, v, data in G_signed.edges(data=True):
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+        
+        sentiment = data['net_sentiment']
+        total = data['total_posts']
+        
+        if sentiment > 0:
+            color = 'rgba(0, 128, 0, 0.6)' # Green
+        elif sentiment < 0:
+            color = 'rgba(255, 0, 0, 0.6)' # Red
+        else:
+            color = 'rgba(128, 128, 128, 0.4)' # Grey
+
+        width = np.log1p(total) * 0.5 + 0.5
+
+        edge_trace = go.Scatter(
+            x=[x0, x1, None],
+            y=[y0, y1, None],
+            line=dict(width=width, color=color),
+            hoverinfo='text',
+            mode='lines',
+            # Hover text for the edge
+            text=f"{u} - {v}<br>Net: {sentiment}<br>Total: {total} (Pos: {data['pos_count']}, Neg: {data['neg_count']})",
+            showlegend=False
+        )
+        edge_traces.append(edge_trace)
+
+    # -- Nodes --
+    node_x = []
+    node_y = []
+    node_text = []
+    node_colors = []
+    
+    # Prepare color mapping
     country_to_faction = factions_df_norm.set_index('country')['faction'].to_dict()
-    node_colors = [node_color_map(country_to_faction.get(node, -1) % 20) if country_to_faction.get(node, -1) != -1 else 'lightgrey' for node in G_signed.nodes()]
+    unique_factions = sorted(list(set(country_to_faction.values())))
+    
+    colors_list = pc.qualitative.Dark24 * 2 
+    faction_color_map = {f: colors_list[i % len(colors_list)] for i, f in enumerate(unique_factions)}
 
+    for node in G_signed.nodes():
+        x, y = pos[node]
+        node_x.append(x)
+        node_y.append(y)
+        
+        faction_id = country_to_faction.get(node, -1)
+        faction_name = f"Faction {faction_id}" if faction_id != -1 else "Unknown"
+        
+        node_text.append(f"<b>{node}</b><br>Faction: {faction_name}")
+        
+        if faction_id != -1:
+            node_colors.append(faction_color_map.get(faction_id, 'lightgrey'))
+        else:
+            node_colors.append('lightgrey')
 
-    fig_net, ax_net = plt.subplots(figsize=(16, 10)) 
-    pos = nx.spring_layout(G_signed, k=0.6, iterations=60, seed=42) 
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode='markers+text',
+        hoverinfo='text',
+        text=[n for n in G_signed.nodes()], 
+        textposition="top center",
+        hovertext=node_text, 
+        marker=dict(
+            showscale=False,
+            color=node_colors,
+            size=15,
+            line_width=1,
+            line_color='black'
+        ),
+        showlegend=False
+    )
 
-    nx.draw_networkx_nodes(G_signed, pos, node_size=60, node_color=node_colors, alpha=0.9, ax=ax_net)
-    nx.draw_networkx_edges(G_signed, pos, edge_color=edge_colors, width=edge_widths, alpha=0.3, ax=ax_net)
-    nx.draw_networkx_labels(G_signed, pos, font_size=9, font_weight='bold', ax=ax_net)
-
-    ax_net.set_title(title, fontsize=16)
-    ax_net.set_axis_off()
-    plt.tight_layout()
-    plt.show() 
-    plt.close(fig_net)
-
-    filename = 'images/signed_network.png'
-    fig_net.savefig(filename)
+    fig = go.Figure(data=edge_traces + [node_trace],
+                    layout=go.Layout(
+                        title={'text': title, 'font': {'size': 16}},
+                        showlegend=False,
+                        hovermode='closest',
+                        margin=dict(b=20,l=5,r=5,t=40),
+                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        height=800,
+                        width=1200
+                    ))
+    
+    output_html = 'images/signed_network_interactive.html'
+    
+    fig.write_html(output_html)    
+    fig.show()
 
 def plot_faction_evolution(y_factions_norm_df):
     
