@@ -202,6 +202,21 @@ def get_cluster_samples(subreddit_labels, all_cluster_labels, n_samples=10):
 # === COUNTRY INTERACTION ANALYSIS
 
 def calculate_normalized_interactions(country_post_counts, df_post_between_countries):
+
+    """
+    Calculates the normalized interaction strength between country pairs to identify significant ties.
+
+    It aggregates bidirectional interactions (summing A->B and B->A), filters self-loops, and applies 
+    logarithmic normalization based on total country activity to correct for volume disparities.
+
+    Args:
+        country_post_counts (pd.Series): Series mapping countries to their total post counts.
+        df_post_between_countries (pd.DataFrame): DataFrame containing source and target country interactions.
+
+    Returns:
+        pd.DataFrame: A DataFrame of country pairs sorted by their normalized interaction score ('norm_log').
+    """
+
     total_posts_map = country_post_counts.to_dict()
 
     raw_interactions = (
@@ -297,7 +312,6 @@ def find_closest_dissimilar_subreddits(df_strict_approved, df_embeddings):
         
         similarities = sim_matrix[i].copy()
         
-        # Mask out subreddits from the same country
         for j, other_sub in enumerate(subreddit_names):
             if sub_to_country.get(other_sub) == sub_to_country.get(sub) or i == j:
                 similarities[j] = -np.inf 
@@ -485,104 +499,94 @@ def calculate_loyalty_scores(quarterly_factions_summary_df):
 # === RECIPROCITY ANALYSIS ===
 
 def response_global(df_country):
-    
-    # Sort the entire DataFrame by TIMESTAMP *once* at the beginning.
-    # This is fundamental to our logic.
+
+    """
+    Calculates the global conditional probability of reciprocity between countries within a 7-day window.
+
+    It identifies unique country pairs, determines the "initiator" based on the first interaction,
+    and uses `merge_asof` to count how often a country B responds to a post from country A 
+    within 7 days.
+
+    Args:
+        df_country (pd.DataFrame): DataFrame containing 'source_country', 'target_country', and 'TIMESTAMP'.
+
+    Returns:
+        tuple: (total_initiators_global, total_responses_global) - counts of initial posts and valid responses.
+    """
+
     df_country = df_country.sort_values(by='TIMESTAMP')
 
-    # Create a 'pair_key' using frozenset to group (A, B) and (B, A) together
     df_country['pair_key'] = df_country.apply(
         lambda row: frozenset([row['source_country'], row['target_country']]),
         axis=1
     )
-    # Filter out pairs that only have one interaction
     pair_counts = df_country['pair_key'].value_counts()
     valid_pairs = pair_counts[pair_counts > 1].index
     df_analysis = df_country[df_country['pair_key'].isin(valid_pairs)]
 
     print(f"DataFrame ready. Analyzing {len(valid_pairs)} pairs.")
 
-    ## --- 2. Global Totals Calculation (Deterministic Logic) ---
 
     window_days = 7
     total_initiators_global = 0
     total_responses_global = 0
 
-    # Iterate over each unique pair with a progress bar
     for pair in tqdm(valid_pairs, desc="Analyzing pairs"):
         
         if len(pair) < 2:
             continue
             
-        # Get all interactions for this pair
-        # They will ALREADY be sorted by TIMESTAMP thanks to the initial sort
+
         df_pair = df_analysis[df_analysis['pair_key'] == pair]
 
-        # --- Find the "True" Initiator (A) ---
-        # Get the very first interaction ever for this pair
         first_interaction = df_pair.iloc[0]
-        
-        # Define roles based on that first interaction
-        # country_A is the initiator, country_B is the responder
+
         country_A = first_interaction['source_country']
         country_B = first_interaction['target_country']
         
-        # --- Get all interactions for these defined roles ---
-        
-        # Get all A -> B interactions (initiations)
+ 
         df_A_to_B = df_pair[
             (df_pair['source_country'] == country_A) & 
             (df_pair['target_country'] == country_B)
         ]
-        # Get all B -> A interactions (responses)
         df_B_to_A = df_pair[
             (df_pair['source_country'] == country_B) & 
             (df_pair['target_country'] == country_A)
         ]
 
-        # If the "responder" (B) has never posted, 
-        # we cannot measure reciprocity for this pair
+
         if df_A_to_B.empty or df_B_to_A.empty:
             continue
 
-        # --- Calculate conditional probability ---
         df_A_to_B = df_A_to_B.copy()
         df_B_to_A = df_B_to_A.copy()
-        # Copy timestamps to new columns to preserve them after the merge
         df_A_to_B['TIMESTAMP_A'] = df_A_to_B['TIMESTAMP']
         df_B_to_A['TIMESTAMP_B'] = df_B_to_A['TIMESTAMP']
 
-        # Find the first response (B->A) that occurred *after* each initiation (A->B)
         merged = pd.merge_asof(
-            df_A_to_B,  # Already sorted by TIMESTAMP
-            df_B_to_A,  # Already sorted by TIMESTAMP
-            on='TIMESTAMP',          # The column to merge on
-            direction='forward',   # Find the first response *after* the initiation
+            df_A_to_B,  
+            df_B_to_A,  
+            on='TIMESTAMP',         
+            direction='forward',   
             suffixes=('_A', '_B')
         )
         
-        # Calculate the time delta
         merged['response_time'] = merged['TIMESTAMP_B'] - merged['TIMESTAMP_A']
         
-        # Check if the response occurred within the 7-day window
         merged['responded_within_7_days'] = (
             merged['response_time'] <= pd.Timedelta(days=window_days)
         )
 
-        # --- Update global counters ---
         total_initiators_global += len(df_A_to_B)
         total_responses_global += merged['responded_within_7_days'].sum()
         
-    ## --- 3. Global Results Analysis ---
 
-    # Calculate the final probability, handling the division by zero case
     if total_initiators_global == 0:
         print("\nWARNING: No 'initiator' interactions found. Cannot calculate probability.")
         conditioned_prob = 0
     else:
         conditioned_prob = total_responses_global / total_initiators_global
 
-    # Print the final result (using A and B)
     print("\n--- Global Reciprocity Analysis ---")
     print(f"Total 'initiator' interactions (A->B) analyzed: {total_initiators_global}")
     print(f"Total responses (B->A) within 7 days: {total_responses_global:.0f}")
@@ -590,25 +594,31 @@ def response_global(df_country):
     return total_initiators_global, total_responses_global
 
 def response_intra_country(df_combined):
+
+    """
+    Calculates the conditional probability of reciprocity between different subreddits within the same country.
+
+    It filters for domestic interactions, identifies subreddit pairs, determines the "initiator" 
+    based on the first post, and tracks how often the target subreddit responds within a 7-day window.
+
+    Args:
+        df_combined (pd.DataFrame): DataFrame containing source/target subreddits, countries, and timestamps.
+
+    Returns:
+        tuple: (total_initiators_global, total_responses_global) - counts of initial posts and valid domestic responses.
+    """
     
-    # 1. Filter for INTRA-COUNTRY interactions
-    #    - Countries must be the same
-    #    - Countries must not be NaN
-    #    - Subreddits must be DIFFERENT
     df_intra = df_combined[
         (df_combined['source_country'] == df_combined['target_country']) &
         (df_combined['source_country'].notna()) &
         (df_combined['SOURCE_SUBREDDIT'] != df_combined['TARGET_SUBREDDIT'])
     ].copy()
 
-    # 2. Ensure TIMESTAMP is datetime and SORT
     df_intra['TIMESTAMP'] = pd.to_datetime(df_intra['TIMESTAMP'])
-    # SINGLE Sort at the beginning: this is fundamental
     df_intra = df_intra.sort_values(by='TIMESTAMP')
 
     print(f"Found {len(df_intra)} intra-country interactions (between different subreddits).")
 
-    ## --- 2. Identify all unique SUBREDDIT pairs ---
     df_intra['pair_key'] = df_intra.apply(
         lambda row: frozenset([row['SOURCE_SUBREDDIT'], row['TARGET_SUBREDDIT']]),
         axis=1
@@ -619,29 +629,21 @@ def response_intra_country(df_combined):
 
     print(f"Analyzing {len(valid_pairs)} unique subreddit pairs.")
 
-    ## --- 3. Global Totals Calculation (Deterministic Logic) ---
     window_days = 7
     total_initiators_global = 0
     total_responses_global = 0
 
-    # Iterate over each UNIQUE subreddit pair
     for pair in tqdm(valid_pairs, desc="Analyzing subreddit pairs"):
         
-        # --- Find the "True" Initiator (Sub_A) ---
         
-        # Get all interactions for the pair (already sorted by TIMESTAMP)
         df_pair = df_analysis[df_analysis['pair_key'] == pair]
         
-        # Find the very first interaction ever
         first_interaction = df_pair.iloc[0]
         
-        # Define roles based on that first interaction
         Sub_A = first_interaction['SOURCE_SUBREDDIT'] # Initiator
         Sub_B = first_interaction['TARGET_SUBREDDIT'] # Responder
         
-        # --- End of deterministic logic ---
 
-        # Define "Initiation" (A -> B) and "Response" (B -> A)
         df_A_to_B = df_pair[
             (df_pair['SOURCE_SUBREDDIT'] == Sub_A) & 
             (df_pair['TARGET_SUBREDDIT'] == Sub_B)
@@ -651,36 +653,30 @@ def response_intra_country(df_combined):
             (df_pair['TARGET_SUBREDDIT'] == Sub_A)
         ]
 
-        # If the "responder" Sub_B never posted, skip
         if df_A_to_B.empty or df_B_to_A.empty:
             continue
 
-        # --- Calculate conditional probability ---
         df_A_to_B = df_A_to_B.copy()
         df_B_to_A = df_B_to_A.copy()
         df_A_to_B['TIMESTAMP_A'] = df_A_to_B['TIMESTAMP']
         df_B_to_A['TIMESTAMP_B'] = df_B_to_A['TIMESTAMP']
 
         merged = pd.merge_asof(
-            df_A_to_B, # Already sorted
-            df_B_to_A, # Already sorted
+            df_A_to_B, 
+            df_B_to_A, 
             on='TIMESTAMP',
             direction='forward',
             suffixes=('_A', '_B')
         )
         
-        # Calculate the time delta
         merged['response_time'] = merged['TIMESTAMP_B'] - merged['TIMESTAMP_A']
-        # Check if the response occurred within the 7-day window
         merged['responded_within_7_days'] = (
             merged['response_time'] <= pd.Timedelta(days=window_days)
         )
 
-        # --- Update global counters ---
         total_initiators_global += len(df_A_to_B)
         total_responses_global += merged['responded_within_7_days'].sum()
         
-    ## --- 4. Global Results Analysis ---
     cond_prob = 0.0
     if total_initiators_global > 0:
         cond_prob = total_responses_global / total_initiators_global
@@ -702,13 +698,11 @@ def find_reciprocity_pairs_and_similarity(df_interactions, features_list, df_cou
     """
     WINDOW_DAYS = 7
     country_subs_list = df_countries['subreddit'].tolist()
-    # TRIGGER = Any sub posting to a country
     df_triggers = df_interactions[
         (df_interactions['TARGET_SUBREDDIT'].isin(country_subs_list)) &
         (df_interactions['SOURCE_SUBREDDIT'] != df_interactions['TARGET_SUBREDDIT'])
     ]
         
-    # RESPONSES = A country posting to any sub
     df_responses = df_interactions[
         (df_interactions['SOURCE_SUBREDDIT'].isin(country_subs_list)) &
         (df_interactions['SOURCE_SUBREDDIT'] != df_interactions['TARGET_SUBREDDIT'])
@@ -722,7 +716,6 @@ def find_reciprocity_pairs_and_similarity(df_interactions, features_list, df_cou
         
     if len(df_triggers) == 0: return []
 
-    # Iterate over triggers
     for trigger_id, trigger_post in tqdm(df_triggers.iterrows(), total=len(df_triggers)):
         source_A = trigger_post['SOURCE_SUBREDDIT']
         target_B = trigger_post['TARGET_SUBREDDIT']
@@ -757,7 +750,23 @@ def find_reciprocity_pairs_and_similarity(df_interactions, features_list, df_cou
     return similarity_scores
 
 def response_similarity(df_combined, df_countries):
-    # --- 1. Style Feature Definition ---
+
+    """
+    Performs a statistical test to determine if reciprocal post pairs exhibit greater linguistic style similarity
+    than random pairs (stylistic mirroring).
+
+    It extracts style features (sentiment and LIWC scores), computes cosine similarity for identified reciprocal
+    pairs (A->B and B->A within 7 days), generates a random baseline for comparison, and conducts T-tests
+    and Mann-Whitney U tests.
+
+    Args:
+        df_combined (pd.DataFrame): DataFrame containing post metadata and style features (e.g., 'LIWC_I').
+        df_countries (pd.DataFrame): DataFrame used to identify valid country pairs for reciprocity checking.
+
+    Returns:
+        None: Prints statistical test results and saves visualization plots to the 'images/' directory.
+    """
+    
     style_features_list = [
         # Tone/Sentiment Measures 
         'sent_pos',
@@ -771,12 +780,10 @@ def response_similarity(df_combined, df_countries):
         # Psychological Style: Other (LIWC)
         'LIWC_Assent', 'LIWC_Dissent', 'LIWC_Nonflu', 'LIWC_Filler'
     ]
-    # --------------------------------------------------------
+    
 
 
-    # --- 2. Data Preparation ---
 
-    # Verify that the chosen style features exist
     for col in style_features_list:
         if col not in df_combined.columns:
             raise ValueError(f"Style feature '{col}' was not found in df_combined.")
@@ -791,41 +798,33 @@ def response_similarity(df_combined, df_countries):
 
     WINDOW_DAYS = 7
 
-    # --- 3. Main Analysis Execution (Reciprocity) ---
     reciprocity_similarities = find_reciprocity_pairs_and_similarity(
         df_analysis, 
         style_features_list,  
         df_countries
     )
 
-    # --- 4. Baseline Analysis Execution (Random Control) ---
     baseline_similarities = []
     if not reciprocity_similarities:
         print("\nNo reciprocity pairs found. Cannot run baseline.")
     else:
         print("\n--- Starting Baseline Analysis (Control Group) ---")
         
-        # Number of samples to create (same as test group)
         N = len(reciprocity_similarities)
         print(f"Creating {N} random post pairs for comparison...")
         
-        # Extract all style vectors
         all_style_vectors_df = df_analysis[style_features_list]
         
-        # Sample N random posts for 'Group A'
         random_vectors_A = all_style_vectors_df.sample(n=N, replace=True).values
         
-        # Sample N random posts for 'Group B'
         random_vectors_B = all_style_vectors_df.sample(n=N, replace=True).values
         
-        # Calculate similarity for each random pair
         for i in tqdm(range(N)):
             sim = cosine_similarity([random_vectors_A[i]], [random_vectors_B[i]])[0][0]
             baseline_similarities.append(sim)
 
         print("Baseline analysis complete.")
 
-    # --- 5. Statistical Comparison and Visualization ---
     if reciprocity_similarities and baseline_similarities:
         sim_series_reciprocal = pd.Series(reciprocity_similarities, name='Reciprocal')
         sim_series_baseline = pd.Series(baseline_similarities, name='Random')
@@ -836,23 +835,19 @@ def response_similarity(df_combined, df_countries):
         print("\n--- Statistics (Control Group: Random) ---")
         print(sim_series_baseline.describe())
         
-        # Statistical test (t-test)
         try:
-            # T-test 
             t_stat, p_value = ttest_ind(sim_series_reciprocal, sim_series_baseline, 
                                         equal_var=False, alternative='greater')
             print(f"\n--- T-Test (Reciprocal > Random) ---")
             print(f"T-statistic: {t_stat:.4f}")
             print(f"P-value: {p_value:.4f}")
 
-            # Mann-Whitney U 
             mwu_stat, mwu_p_value = mannwhitneyu(sim_series_reciprocal, sim_series_baseline, 
                                                 alternative='greater')
             print(f"\n--- Mann-Whitney U Test (Reciprocal > Random) ---")
             print(f"U-statistic: {mwu_stat:.4f}")
             print(f"P-value: {mwu_p_value:.4f}")
 
-            # Interpretation
             print("\n--- Test Interpretation ---")
             if mwu_p_value < 0.05: # We use the U-test p-value (95% confidence level)
                 print(f"SIGNIFICANT RESULT (p < 0.05):")
@@ -866,12 +861,10 @@ def response_similarity(df_combined, df_countries):
         except Exception as e:
             print(f"Error during statistical test: {e}")
 
-        # Plot (KDE - Kernel Density Estimate)
         plt.figure(figsize=(12, 7))
         sns.kdeplot(sim_series_reciprocal, fill=True, label='Reciprocal Similarity (Test)', clip=(-1, 1))
         sns.kdeplot(sim_series_baseline, fill=True, label='Random Similarity (Control)', clip=(-1, 1))
         
-        # Calculate and plot the means
         mean_reciprocal = sim_series_reciprocal.mean()
         mean_baseline = sim_series_baseline.mean()
         median_reciprocal = sim_series_reciprocal.median()
@@ -903,7 +896,6 @@ def response_similarity(df_combined, df_countries):
 
     else:
         print("\nAnalysis not completed (missing reciprocity or baseline data).")
-    # Create a temporary DataFrame for plotting
     df_plot = pd.DataFrame({
         'Similarity': reciprocity_similarities + baseline_similarities,
         'Type': ['Reciprocal'] * len(reciprocity_similarities) + ['Random'] * len(baseline_similarities)
@@ -911,10 +903,8 @@ def response_similarity(df_combined, df_countries):
 
     plt.figure(figsize=(8, 6))
     
-    # Use violinplot to visualize both density and quartiles (or use boxplot for simplicity)
     sns.violinplot(data=df_plot, x='Type', y='Similarity', palette="muted", split=True)
     
-    # Add actual data points (jitter) to show the real data density
     sns.stripplot(data=df_plot, x='Type', y='Similarity', color='black', size=2, alpha=0.3)
 
     plt.title('Direct Comparison: Reciprocity vs. Random')

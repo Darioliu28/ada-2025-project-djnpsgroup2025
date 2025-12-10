@@ -56,10 +56,8 @@ def split_properties_columns(df_to_split, col_name_to_split="PROPERTIES", new_co
     """Splits the 'PROPERTIES' column into multiple feature columns."""
     if col_name_to_split in df_to_split.columns:
         try:
-            # Split the column
             split_data = df_to_split[col_name_to_split].str.split(",", expand=True)
             
-            # Ensure the number of split columns matches the new column names
             if split_data.shape[1] == len(new_col_names):
                 df_to_split[new_col_names] = split_data.astype(float)
                 df_to_split.drop(columns=[col_name_to_split], inplace=True)
@@ -374,7 +372,6 @@ def calculate_country_shortest_paths(all_shortest_paths, country_csv_path, outpu
     else:
         print("\nNo shortest paths found between any two mapped countries.")
 
-# --- Constants for network analysis ---
 # Path for the saved/loaded pre-computed graph
 PATH = "data/"
 FILENAME_TITLES = 'soc-redditHyperlinks-title.tsv'
@@ -382,7 +379,7 @@ FILENAME_BODIES = 'soc-redditHyperlinks-body.tsv'
 GRAPH_FILENAME = os.path.join(PATH, "subreddit_graph.gpickle")
 
 # Path for the country mapping file
-COUNTRY_CSV_FILENAME = os.path.join(PATH, "country_matches_map_exp.csv")
+COUNTRY_CSV_FILENAME = os.path.join(PATH, "country_matches_map_expanded.csv")
 
 # Path for the final output file
 COUNTRY_PATHS_OUTPUT = os.path.join(PATH, "country_shortest_paths_output.csv")
@@ -395,8 +392,6 @@ if df_title is not None and df_body is not None:
     print("\n--- Bodies DataFrame (Raw) ---")
     display(df_body.head())
 
-#na.remove_saved_graph(GRAPH_FILENAME)
-
 graph, source_subreddits, all_shortest_paths = None, None, None
 if df_title is not None:
     graph, source_subreddits, all_shortest_paths = load_or_build_graph_data(df_title, GRAPH_FILENAME)
@@ -408,7 +403,6 @@ if graph:
 else:
     print("Graph not loaded, cannot plot country graph.")
 
-# --- Calculate and save country-to-country shortest paths ---
 
 if all_shortest_paths:
     calculate_country_shortest_paths(all_shortest_paths, COUNTRY_CSV_FILENAME, COUNTRY_PATHS_OUTPUT)

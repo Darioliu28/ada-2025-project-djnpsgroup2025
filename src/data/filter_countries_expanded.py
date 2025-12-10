@@ -1,9 +1,23 @@
 import pandas as pd
-import numpy as np
 from rapidfuzz import fuzz
 import re
 
 def find_match(subreddit, country_map):
+    """
+        Identifies the country associated with a subreddit name using hierarchical matching.
+
+        Prioritizes exact token matches, then checks for country prefixes/suffixes, and finally
+        uses fuzzy matching (score > 90) for longer names to handle variations.
+
+        Args:
+            subreddit (str): The name of the subreddit.
+            country_map (dict): Mapping of variations/cities to standardized country names.
+
+        Returns:
+            str or None: The standardized country name if found, else None.
+        """
+
+
     name = subreddit.lower().replace("r/", "")
     tokens = re.split(r'[^a-z]+', name)
     joined = ''.join(tokens)
@@ -32,6 +46,22 @@ def find_match(subreddit, country_map):
     return None
 
 def filter_countries(origin_folder, final_folder):
+
+    """
+    Processes raw Reddit hyperlink data to extract linguistic features and map subreddits to countries.
+
+    It reads raw TSV files, parses the 'PROPERTIES' column into separate metric columns (e.g., LIWC scores), 
+    merges title and body datasets, and uses a comprehensive dictionary to assign standardized country 
+    labels to source and target subreddits.
+
+    Args:
+        origin_folder (str): Path to the directory containing input TSV files.
+        final_folder (str): Path to the directory where output CSV files will be saved.
+
+    Returns:
+        None: Saves 'df_country_expanded.csv' and 'country_matches_map_expanded.csv' to disk.
+    """
+    
     df_title = pd.read_csv(origin_folder+"soc-redditHyperlinks-title.tsv", sep="\t")
     df_body = pd.read_csv(origin_folder+"soc-redditHyperlinks-body.tsv", sep="\t")
 

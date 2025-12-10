@@ -18,6 +18,18 @@ pio.renderers.default = "vscode"
 # -- Functions for sentiment analysis
 
 def plot_top_5_subreddits(avg_props_by_subreddit, target_metrics):
+
+    """
+    Generates a 2x3 grid of horizontal bar charts showing the top 5 subreddits for specified metrics.
+
+    Args:
+        avg_props_by_subreddit (pd.DataFrame): DataFrame containing average metric values per subreddit.
+        target_metrics (list): List of column names (metrics) to visualize (e.g., 'LIWC_Anger').
+
+    Returns:
+        str: The filename of the saved plot ('images/top_5_subreddits_metrics.png').
+    """
+
     fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(16, 9))
     axes = axes.flatten()  
 
@@ -42,16 +54,25 @@ def plot_top_5_subreddits(avg_props_by_subreddit, target_metrics):
 
     output_filename = 'images/top_5_subreddits_metrics.png'
     
-    # 2. SAVE the figure immediately after preparing it (and after show() if used)
-    # Use the 'fig' object's savefig method, which is safer than the global plt.savefig()
     fig.savefig(output_filename, bbox_inches='tight', dpi=300) 
     
-    # 3. Close the figure to free up memory
     plt.close(fig)
 
     return output_filename
 
 def plot_countries_by_metric(avg_props_by_country, metric, title):
+
+    """
+    Generates and saves a vertical bar chart displaying the top 70 countries for a specific metric.
+
+    Args:
+        avg_props_by_country (pd.DataFrame): DataFrame containing average metric values per country.
+        metric (str): The specific column name to plot (e.g., 'LIWC_Relig').
+        title (str): The title of the chart.
+
+    Returns:
+        None: Displays the interactive plot and saves a static image to 'images/avg_relig_by_country.png'.
+    """
 
     plot_df = (
         avg_props_by_country[[metric]]
@@ -90,6 +111,17 @@ def plot_countries_by_metric(avg_props_by_country, metric, title):
 # -- Functions for interaction analysis
 
 def chord_plot(df_final):
+
+    """
+    Generates and saves an interactive Chord diagram visualizing the top 50 inter-country interactions.
+
+    Args:
+        df_final (pd.DataFrame): DataFrame containing 'Country_A', 'Country_B', and 'n_interactions'.
+
+    Returns:
+        hv.Chord: The generated interactive Chord diagram object.
+    """
+
     hv.extension('bokeh')
 
     top_interactions = df_final.head(50).copy()
@@ -125,8 +157,6 @@ def chord_plot(df_final):
     hv.save(viz, output_filename)
 
     return viz
-
-
 
 # -- Functions for cluster with embedding analysis --
 
@@ -195,7 +225,6 @@ def plot_labeled_cluster_map(tsne_df, label_map):
 def plot_faction_world_map(factions_df, title):
     """
     Generates an interactive Plotly choropleth map of country factions.
-    Requires the 'pycountry' library to be installed.
     """
 
     def get_iso_alpha_3(country_name):
@@ -323,19 +352,16 @@ def plot_signed_network(mapped_posts_df, factions_df_norm, title):
             line=dict(width=width, color=color),
             hoverinfo='text',
             mode='lines',
-            # Hover text for the edge
             text=f"{u} - {v}<br>Net: {sentiment}<br>Total: {total} (Pos: {data['pos_count']}, Neg: {data['neg_count']})",
             showlegend=False
         )
         edge_traces.append(edge_trace)
 
-    # -- Nodes --
     node_x = []
     node_y = []
     node_text = []
     node_colors = []
     
-    # Prepare color mapping
     country_to_faction = factions_df_norm.set_index('country')['faction'].to_dict()
     unique_factions = sorted(list(set(country_to_faction.values())))
     
@@ -392,6 +418,19 @@ def plot_signed_network(mapped_posts_df, factions_df_norm, title):
     fig.show()
 
 def plot_faction_evolution(y_factions_norm_df):
+
+    """
+    Generates and saves an interactive Sankey diagram visualizing the flow of countries between factions over time.
+
+    It tracks how countries transition between different factions across years (or quarters), 
+    mapping these transitions as flows with colors corresponding to the source faction.
+
+    Args:
+        y_factions_norm_df (pd.DataFrame): DataFrame containing 'year', 'faction', and a list of 'countries'.
+
+    Returns:
+        None: Displays the plot and saves it as 'images/faction_evolution.html'.
+    """
     
     df_factions = y_factions_norm_df.explode('countries').reset_index(drop=True)
 
@@ -496,6 +535,20 @@ def plot_faction_evolution(y_factions_norm_df):
 
 def heatmap_co_occurrence(target_countries, q_factions_norm_df):
 
+    """
+    Generates and saves a heatmap visualizing the stability of alliances between target countries.
+
+    It calculates how often pairs of countries appear in the same faction across different time periods 
+    and displays this frequency as a color-coded matrix.
+
+    Args:
+        target_countries (list): List of country names to include in the heatmap.
+        q_factions_norm_df (pd.DataFrame): DataFrame containing faction membership data with a 'countries' column.
+
+    Returns:
+        None: Displays the interactive heatmap and saves it as 'images/heatmap_co_occurrence.html'.
+    """
+
     pair_counts = {}
 
     for c1 in target_countries:
@@ -533,6 +586,19 @@ def heatmap_co_occurrence(target_countries, q_factions_norm_df):
 # -- Functions for shortest path analysis
 
 def plot_MDS_shortest_path(df_country_paths):
+
+    """
+    Visualizes the "distances" between countries using Multidimensional Scaling (MDS) based on shortest path lengths.
+
+    It creates a symmetric distance matrix from shortest path data, handling missing paths with a penalty value,
+    and projects the countries into a 2D space where closer points represent stronger connectivity.
+
+    Args:
+        df_country_paths (pd.DataFrame): DataFrame containing 'source_country', 'target_country', and 'shortest_path_length'.
+
+    Returns:
+        None: Displays the interactive scatter plot and saves it as 'images/mds_shortest_path.html'.
+    """
 
     all_countries = np.unique(
         np.concatenate([
@@ -609,6 +675,19 @@ def plot_MDS_shortest_path(df_country_paths):
 
 def plot_sunburst(df_top_sport_per_country):
 
+    """
+    Generates and saves an interactive Sunburst chart showing the dominant sports across different countries.
+
+    It creates a hierarchical visualization where the inner ring represents sports and the outer ring lists 
+    countries, sized by their total interaction volume.
+
+    Args:
+        df_top_sport_per_country (pd.DataFrame): DataFrame containing 'Sport', 'Country', and 'total_interactions'.
+
+    Returns:
+        None: Displays the interactive sunburst chart and saves it as 'images/sport_sunburst.html'.
+    """
+
     fig = px.sunburst(
         df_top_sport_per_country,
         path=['Sport', 'Country'],  
@@ -642,8 +721,22 @@ def plot_sunburst(df_top_sport_per_country):
 # --Response analysis--
 
 def funnel_graph_global(total_initiators_global, total_responses_global):
+
+    """
+    Generates and saves a funnel chart visualizing the global reciprocity rate between initiations and responses.
+
+    It creates a two-stage funnel showing the drop-off from total initial posts to reciprocal 
+    responses received within a set window, calculating the percentage conversion.
+
+    Args:
+        total_initiators_global (int): Total count of initiating posts (A->B).
+        total_responses_global (int): Total count of reciprocal responses (B->A).
+
+    Returns:
+        go.Figure: The generated interactive funnel chart object.
+    """
+
     fig = go.Figure(go.Funnel(
-        # Labels tradotte
         y = ["Total Initiations (A->B)", "Received Responses (B->A)"],
         x = [total_initiators_global, total_responses_global],
         textposition = "inside",
@@ -652,7 +745,6 @@ def funnel_graph_global(total_initiators_global, total_responses_global):
         marker = {"color": ["#1f77b4", "#2ca02c"]}
     ))
 
-    # Titolo tradotto
     fig.update_layout(title_text="Global Reciprocity Funnel")
 
     filename = 'images/funnel_global.html'
@@ -661,14 +753,28 @@ def funnel_graph_global(total_initiators_global, total_responses_global):
     return fig
 
 def funnel_graph_intra_country(total_initiators, total_responses):
+
+    """
+    Generates and saves a funnel chart visualizing reciprocity between subreddits within the same country.
+
+    It creates a two-stage funnel showing the drop-off from initial intra-country posts to 
+    reciprocal responses, highlighting the domestic engagement rate.
+
+    Args:
+        total_initiators (int): Total count of initiating posts between domestic subreddits.
+        total_responses (int): Total count of reciprocal responses received.
+
+    Returns:
+        go.Figure: The generated interactive funnel chart object.
+    """
+
     fig = go.Figure(go.Funnel(
-        # Labels adattate per i Subreddit
         y = ["Total Initiations (Sub A -> Sub B)", "Received Responses (Sub B -> Sub A)"],
         x = [total_initiators, total_responses],
         textposition = "inside",
         textinfo = "value+percent initial",
         opacity = 0.65, 
-        marker = {"color": ["#1f77b4", "#FF7F0E"]} # Blu -> Arancione (per distinguerlo dal grafico inter-country)
+        marker = {"color": ["#1f77b4", "#FF7F0E"]} 
     ))
 
     fig.update_layout(title_text="Global Intra-Country Reciprocity Funnel (Subreddits)")

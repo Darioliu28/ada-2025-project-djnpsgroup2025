@@ -4,6 +4,21 @@ import re
 from tqdm import tqdm
 
 def find_match(subreddit, country_map):
+
+    """
+    Identifies the country associated with a subreddit name using hierarchical matching.
+
+    Prioritizes exact token matches, then checks for country prefixes/suffixes, and finally
+    uses fuzzy matching (score > 90) for longer names to handle variations.
+
+    Args:
+        subreddit (str): The name of the subreddit.
+        country_map (dict): Mapping of variations/cities to standardized country names.
+
+    Returns:
+        str or None: The standardized country name if found, else None.
+    """
+
     name = subreddit.lower().replace("r/", "")
     tokens = re.split(r'[^a-z]+', name)
     joined = ''.join(tokens)
@@ -32,6 +47,21 @@ def find_match(subreddit, country_map):
     return None
 
 def filter_sports(df_post_with_1_country, country_matches_list, final_folder):
+
+    """
+    Identifies and categorizes sport-related subreddits that are not already matched to countries.
+
+    It creates a mapping of sport keywords (e.g., 'nba', 'soccer', 'f1') to broader categories
+    and applies hierarchical matching to label non-country subreddits.
+
+    Args:
+        df_post_with_1_country (pd.DataFrame): Dataframe of posts filtered for country relevance.
+        country_matches_list (str): Path to the CSV file containing existing country-subreddit matches.
+        final_folder (str): Path to the directory where the output CSV will be saved.
+
+    Returns:
+        dict: A dictionary mapping subreddit names to their sport category.
+    """
 
     sport_map = {
         # --- General Terms ---
