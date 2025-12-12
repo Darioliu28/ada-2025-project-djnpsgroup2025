@@ -163,4 +163,4 @@ ADA-2025-PROJECT-DJNPSGROUP2025/
    - Extract the files and ensure ```soc-redditHyperlinks-body.tsv```, ```soc-redditHyperlinks-title.tsv```and ```web-redditEmbeddings-subreddit.csv``` are placed inside the data/ folder.
 4.  **Run the notebook:**
     ```bash
-        jupyter notebook results.ipynb
+    jupyter notebook results.ipynb
