@@ -884,13 +884,12 @@ def response_similarity(df_combined, df_countries):
         plt.ylabel('Density')
         plt.legend()
         plt.grid(True)
+        filename = 'images/response_similarity_distribution.png'
+        plt.savefig(filename, bbox_inches='tight', dpi=300)
         try:
             plt.show()
         except Exception as e:
             print(f"Could not display plot: {e}")
-
-        filename = 'images/response_similarity_distribution.jpg'
-        plt.savefig(filename, bbox_inches='tight', dpi=300)
         
         plt.close()
 
@@ -909,9 +908,8 @@ def response_similarity(df_combined, df_countries):
 
     plt.title('Direct Comparison: Reciprocity vs. Random')
     plt.grid(axis='y', alpha=0.3)
-    plt.show()
-
-    filename = 'images/response_similarity_comparison.jpg'
+    filename = 'images/response_similarity_comparison.png'
     plt.savefig(filename, bbox_inches='tight', dpi=300)
+    plt.show()
     plt.close()
 
