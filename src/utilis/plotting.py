@@ -578,6 +578,18 @@ def heatmap_co_occurrence(target_countries, q_factions_norm_df):
         title="Alliance Stability: How often are countries in the same faction?",
         color_continuous_scale='Viridis'
     )
+
+    fig.update_layout(
+        xaxis=dict(
+            tickmode='linear', 
+            tickangle=-90,     
+            side='bottom'      
+        ),
+        
+        margin=dict(l=50, r=50, t=50, b=200) 
+    )
+    # -----------------------------
+
     fig.show()
 
     filename = 'images/heatmap_co_occurrence.html'
@@ -707,7 +719,6 @@ def plot_sunburst(df_top_sport_per_country):
         margin=dict(t=50, l=0, r=0, b=0) 
     )
 
-    # 3. Refine the Text Info
     fig.update_traces(
         textinfo="label+percent parent",
         insidetextorientation='radial'  

@@ -85,7 +85,7 @@ Country-based subreddits are used as proxies for national communities. We acknow
 ## Workload division within the team
 
 * **Julie: Data & Country Mapping Lead**
-    * **Tasks:** Cleaned dataset for country-subreddit mapping. Runs/refines country mapping (`filter_country_expanded.py`). Analysis of one-to-one country interactions.
+    * **Tasks:** Cleaned dataset for country-subreddit mapping. Runs/refines country mapping (`filter_country_expanded.py`). Analysis of one-to-one country interactions. Development of the website
     * **Milestone:** Delivers final `data/country_matches_map_expanded.csv`.
 
 * **Dario: Cluster and Community analysis Lead**
@@ -97,12 +97,12 @@ Country-based subreddits are used as proxies for national communities. We acknow
     * **Milestone:** Delivers `data/df_country_sport_map.csv` and analysis in `results.ipynb`.
 
 * **Simon: Network Analysis Lead**
-    * **Tasks:** Building core `networkx` graph (`network_analysis.py`). Calculates graph properties (centrality, degree, paths).
+    * **Tasks:** Building core `networkx` graph (`network_analysis.py`). Calculates graph properties (centrality, degree, paths). Development of the website.
     * **Milestone:** Delivers saved graph object.
 
-* **Pietro: Economics Analysis Lead**
-    * **Tasks:** Economics subreddits filtering. Analysis of economics-subreddit interactions, plotting results, and stats for `data/economic_links_with_geo_labeled2.csv`.
-    * **Milestone:** Delivers `data/economic_links_with_geo_labeled2.csv` and analysis in `results.ipynb`.
+* **Pietro:**
+    * **Tasks:** 
+    * **Milestone:** 
 
 ## Repository structure
 
