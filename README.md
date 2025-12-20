@@ -135,7 +135,7 @@ ADA-2025-PROJECT-DJNPSGROUP2025/
 
 1. **Clone the repository:**
    ```bash
-   git clonehttps://github.com/epfl-ada/ada-2025-project-djnpsgroup2025.git
+   git clone https://github.com/epfl-ada/ada-2025-project-djnpsgroup2025.git
    cd ada-2025-project-djnpsgroup2025
     ```
 2. **Create and activate a virtual environment:**
