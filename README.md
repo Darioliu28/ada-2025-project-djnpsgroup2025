@@ -100,7 +100,7 @@ Country-based subreddits are used as proxies for national communities. We acknow
     * **Tasks:** Building core `networkx` graph (`network_analysis.py`). Calculates graph properties (centrality, degree, paths). Development of the website.
     * **Milestone:** Delivers saved graph object.
 
-* **Pietro:Data Cleaning&Labeling and Support**
+* **Pietro: Data Cleaning&Labeling and Support**
     * **Tasks:** Dataset cleaning and preprocessing, with particular attention to fixing and standardizing country labels. Provided support in minor tasks across data analysis and implementation stages.
     * **Milestone:** Contributed to the cleaned dataset used in the analyses.
 
