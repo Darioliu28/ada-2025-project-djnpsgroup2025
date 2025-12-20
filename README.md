@@ -5,7 +5,7 @@
 </p>
 
 
-## Data Story:
+## Data Story: https://julsofpet.github.io/the_world_of_reddit/
 
 
 ## Abstract
