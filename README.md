@@ -145,6 +145,13 @@ ADA-2025-PROJECT-DJNPSGROUP2025/
     python -m venv venv
     source venv/bin/activate
     ```
+    or
+   
+   ```
+   conda create -n "ada-project"
+   conda install pip
+   pip install -r requirements.txt
+    ```
 
     For Windows
     ```bash
@@ -153,7 +160,7 @@ ADA-2025-PROJECT-DJNPSGROUP2025/
     ```
 
 
-3.  **Install the required packages using the requirements.txt file:**
+4.  **Install the required packages using the requirements.txt file:**
 
     ```bash
     pip install -r requirements.txt
@@ -164,3 +171,5 @@ ADA-2025-PROJECT-DJNPSGROUP2025/
 4.  **Run the notebook:**
     ```bash
     jupyter notebook results.ipynb
+
+
