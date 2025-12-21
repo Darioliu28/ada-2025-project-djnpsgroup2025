@@ -149,9 +149,11 @@ ADA-2025-PROJECT-DJNPSGROUP2025/
    
    ```
    conda create -n "ada-project"
+   conda activate ada-project
    conda install pip
    pip install -r requirements.txt
     ```
+   => continue with 4.
 
     For Windows
     ```bash
@@ -160,15 +162,15 @@ ADA-2025-PROJECT-DJNPSGROUP2025/
     ```
 
 
-4.  **Install the required packages using the requirements.txt file:**
+3.  **Install the required packages using the requirements.txt file:**
 
     ```bash
     pip install -r requirements.txt
     ```
-3. **Download the data:**
+4. **Download the data:**
    - Download the dataset from the paper [Social Network: Reddit Hyperlink Network](https://snap.stanford.edu/data/soc-RedditHyperlinks.html) 
    - Extract the files and ensure ```soc-redditHyperlinks-body.tsv```, ```soc-redditHyperlinks-title.tsv```and ```web-redditEmbeddings-subreddit.csv``` are placed inside the data/ folder.
-4.  **Run the notebook:**
+5.  **Run the notebook:**
     ```bash
     jupyter notebook results.ipynb
 
