@@ -1,4 +1,4 @@
-# Mapping Societal Dynamics on Reddit
+# Interactions between countries in the world of Reddit
 
 <p>
   <img src="images/cartoon.png" alt="Meme" width="500"/>
