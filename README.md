@@ -1,4 +1,4 @@
-# Interactions between countries in the world of Reddit
+# Interactions Between Countries in the World of Reddit
 
 <p>
   <img src="images/cartoon.png" alt="Meme" width="500"/>
